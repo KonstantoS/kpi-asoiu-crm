@@ -1,10 +1,10 @@
 var pg = require('pg');
 var config = require('../libs/config');
 
-var DB = (function(pb, config){
+var DB = (function(){
     var conString = process.env.DATABASE_URL || 'postgres://'+config.get('db:user')+':'+config.get('db:pass')+'@'+config.get('db:host')+'/'+config.get('db:name');
     
-    function sendQuery(queryString, data,_return){   
+    function sendQuery(queryString, _return){   
         pg.connect(conString, function(err, client, done){
           if (err) {
             return console.error('Error fetching client from pool:', err);
@@ -20,6 +20,8 @@ var DB = (function(pb, config){
     }
     var public = {};
     /*
+     * Method creates SELECT SQL by passing data and sends query
+     * 
      * @param object fields | ex: {'table':[field,...],..}
      * @param array from | ex: [table,...]
      * @param object params | ex: {'where':[[[table,field],equals,value],'and',...],
@@ -56,7 +58,6 @@ var DB = (function(pb, config){
                     var field = item[0];
                     var operator = item[1];
                     var condition = '';
-                    console.log(field+operator+condition);
                     switch (operator) {
                         case '<':
                         case 'less':
@@ -105,16 +106,127 @@ var DB = (function(pb, config){
             Selection += (' LIMIT '+params.limit[1]+' OFFSET '+params.limit[0]);
         }
         Selection += ';';
-        console.log(Selection); 
-        sendQuery(Selection,[],callback);
+        sendQuery(Selection,callback);
     };
-    public.insert = function(table, data){
-        
+    /*
+     * Method creates INSERT query by scheme
+     * 
+     * @param string table
+     * @param object data | ex {'field1':'value', 'field2':'value'....}
+     * @param function callback(statuscode) 
+     */
+    public.insert = function(table, data, callback){
+        var Insert = 'INSERT INTO '+table+ ' ('+data.keys().join(', ')+') VALUES (';
+        var vals = [];
+        for(key in data){
+            vals.push('\''+data[key]+'\'');
+        }
+        Insert += (vals.join(', ')+');');
+        sendQuery(Insert,callback);
     };
-    public.update = function(table, params){
+    /*
+     * Method creates UPDATE query
+     * 
+     * @param string table
+     * @param object data | ex {'field1':'value', 'field2':'value'....}
+     * @param array where |ex [[[table,field],equals,value],'and',...]
+     * @param function callback(statuscode)
+     */
+    public.update = function(table, data, where, callback){
+        var Update = 'UPDATE '+table+' SET ';
+        var vals = [];
+        for(key in data){
+            vals.push(key+'=\''+data[key]+'\'');
+        }
+        Update += (vals.join(', ')+' WHERE ');
+        where.forEach(function(item){
+                if(typeof item === 'object'){
+                    var field = item[0];
+                    var operator = item[1];
+                    var condition = '';
+                    switch (operator) {
+                        case '<':
+                        case 'less':
+                            condition = field + ' < ' + item[2] + '';
+                            break;
+                        case '>':
+                        case 'more':
+                            condition = field + ' > ' + item[2] + '';
+                            break;
+                        case 'between':
+                            condition = field + ' between ' + item[2] + ' and ' + item[3];
+                            break;
+                        case '=':
+                        case 'equal':
+                            condition = field + ' = ' + item[2] + '';
+                            break;
+                        case 'like':
+                            condition = field + ' like \'%' + item[2] + '%\' ';
+                            break;
+                        case '!=':
+                        case 'not equal':
+                            condition = field + ' != ' + item[2] + '';
+                            break;
+                    }
+                    Update += '('+condition+')';
+                }
+                else if(typeof item === 'string' && (item.toLowerCase()==='and' || item.toLowerCase()==='or')){
+                    Update += (' '+item.toUpperCase()+' ');
+                }
+            });
         
+        Update += ';';
+        sendQuery(Update,callback);
+    };
+    /*
+     * Method creates DELETE query for deletiong from table
+     * 
+     * @param string table
+     * @param array what |ex [[[table,field],equals,value],'and',...]
+     * @param function callback(statuscode)
+     */
+    public.delete = function(table, what, callback){
+        var Delete = 'DELETE FROM '+table+' WHERE ';
+        what.forEach(function(item){
+                if(typeof item === 'object'){
+                    var field = item[0];
+                    var operator = item[1];
+                    var condition = '';
+                    switch (operator) {
+                        case '<':
+                        case 'less':
+                            condition = field + ' < ' + item[2] + '';
+                            break;
+                        case '>':
+                        case 'more':
+                            condition = field + ' > ' + item[2] + '';
+                            break;
+                        case 'between':
+                            condition = field + ' between ' + item[2] + ' and ' + item[3];
+                            break;
+                        case '=':
+                        case 'equal':
+                            condition = field + ' = ' + item[2] + '';
+                            break;
+                        case 'like':
+                            condition = field + ' like \'%' + item[2] + '%\' ';
+                            break;
+                        case '!=':
+                        case 'not equal':
+                            condition = field + ' != ' + item[2] + '';
+                            break;
+                    }
+                    Delete += '('+condition+')';
+                }
+                else if(typeof item === 'string' && (item.toLowerCase()==='and' || item.toLowerCase()==='or')){
+                    Delete += (' '+item.toUpperCase()+' ');
+                }
+            });
+        
+        Delete += ';';
+        sendQuery(Delete, callback);
     };
     return public;
-})(pg, config);
+})();
 
 module.exports = DB;
