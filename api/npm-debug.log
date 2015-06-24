@@ -19,7 +19,7 @@
 10 error There is likely additional logging output above.
 11 error System Linux 3.16.0-31-generic
 12 error command "/usr/bin/nodejs" "/usr/bin/npm" "start"
-13 error cwd /home/konstantos/ASOIU/kpi-asoiu-crm
+13 error cwd /home/konstantos/ASOIU/kpi-asoiu-crm/api
 14 error node -v v0.10.25
 15 error npm -v 1.4.21
 16 error code ELIFECYCLE
