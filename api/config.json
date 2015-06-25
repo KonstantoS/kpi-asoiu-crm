@@ -6,13 +6,7 @@
         "user": "acdp", 
         "pass": "asoiu" 
     },
-    "session": {
-        "secret": "secret_key",
-        "key": "cid",
-        "cookie": {
-            "path": "/",
-            "httpOnly": true,
-            "maxAge": null
-        }
+    "security": {
+        "salt": "24oNjC2X"
     }
 }

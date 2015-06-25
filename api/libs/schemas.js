@@ -1,15 +1,15 @@
 var schemas = {
     'users':{
-        'id':['int'],
-        'login':['string',32,/^[a-zA-Z][a-zA-Z0-9-_\.]{2,32}$/],		
-        'passwd':['string',64,/.*/],			
-        'fname':['string',100, /^[A-Za-zА-Яа-я\s]$/],		
-        'email':['string',255, /^[-\w.]+@([A-z0-9][-A-z0-9]+\.)+[A-z]{2,4}$/],				
-        'role':['int'],			
-        'position':['string',100, /[A-Za-zА-Яа-я\s\W]{,100}/],			
-        'avatar_url':['string',200],			
-        'about':['string',255,/.*/],			
-        'creation_time':['timestamp',26,'now()']
+        'id':{'type':'int'},
+        'login':{'type':'string','size':32,'pattern':/^[a-zA-Z][a-zA-Z0-9-_\.]{2,32}$/},		
+        'passwd':{'type':'string','size':64,'encrypted':true},			
+        'fname':{'type':'string','size':100, 'pattern':/^[A-Za-zА-Яа-я\s]{,100}$/},		
+        'email':{'type':'string','size':255, 'pattern':/^[-\w.]+@({A-z0-9][-A-z0-9]+\.)+[A-z]{2,15}$/},				
+        'role':{'type':'int'},			
+        'position':{'type':'string','size':100, 'pattern':/[A-Za-zА-Яа-я\s\W]{,100}/},			
+        'avatar_url':{'type':'string','size':200},			
+        'about':{'type':'string','size':255},			
+        'creation_time':{'type':'timestamp','size':26, 'default':'f::now()'}
     }
 };
 module.exports = schemas;

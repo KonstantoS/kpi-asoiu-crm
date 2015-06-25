@@ -7,18 +7,71 @@ var DB = (function(){
     function sendQuery(queryString, _return){   
         pg.connect(conString, function(err, client, done){
           if (err) {
-            return console.error('Error fetching client from pool:', err);
+            return _return({}, {'status':500,'desc':'Error fetching client from pool:'+err});
           }
           client.query(queryString, function(err, result) {
             done();
             if (err) {
-              return console.error('Error running query:', err);
+              return _return({}, {'status':500,'desc':'Error running query:'+err});
             }
             _return(result);
           });
         });
     }
-    function checkField(item){
+    function wherePart(where){
+        var Where = '';
+        if(where.length > 0)
+            Where += ' WHERE ';
+            where.forEach(function(item){
+                if(typeof item === 'object'){
+                    if(false === DB.schema.check(item))
+                        return;
+                    var table = item[0][0];
+                    var field = item[0][1];
+                    var operator = item[1];
+                    var condition = '';
+                    switch (operator) {
+                        case '<':
+                        case 'less':
+                            condition = table+'.'+field + ' < ' + item[2] + '';
+                            break;
+                        case '>':
+                        case 'more':
+                            condition = table+'.'+field + ' > ' + item[2] + '';
+                            break;
+                        case 'between':
+                            condition = table+'.'+field + ' between ' + item[2] + ' and ' + item[3];
+                            break;
+                        case '=':
+                        case 'equal':
+                            condition = table+'.'+field + ' = ' + item[2] + '';
+                            break;
+                        case 'has':
+                            condition = table+'.'+field + ' ILIKE \'%' + item[2] + '%\' ';
+                            break;
+                        case 'like':
+                            condition = table+'.'+field + ' ILIKE \'' + item[2] + '\' ';
+                            break;
+                        case '!=':
+                        case 'not equal':
+                            condition = table+'.'+field + ' != ' + item[2] + '';
+                            break;
+                    }
+                    Where += '('+condition+')';
+                }
+                else if(typeof item === 'string' && (item.toLowerCase()==='and' || item.toLowerCase()==='or')){
+                    Where += (' '+item.toUpperCase()+' ');
+                }
+            });
+        return Where;
+    }
+    
+    var public = {};
+    /*
+     * Database tables schemas and field patterns
+     */
+    public.schema = schemas;
+    public.schema.check = function(item){
         var table = item[0][0];
         var field = item[0][1];
         var operator = item[1];
@@ -32,64 +85,24 @@ var DB = (function(){
             case 'equal':
             case '!=':
             case 'between':
-                if(DB.schema[table][field][0] === 'int' && (isNaN(parseInt(value)) || (item[3]!==undefined && isNaN(parseInt(item[3])))))
+            case 'match':
+                if(DB.schema[table][field].hasOwnProperty('pattern')){
+                    if(false === value.match(DB.schema[table][field]['pattern']))
+                        return false;
+                }
+                else if(DB.schema[table][field]['type'] === 'int' && (isNaN(parseInt(value)) || (item[3]!==undefined && isNaN(parseInt(item[3])))))
                     return false;
-                else if(DB.schema[table][field][0] === 'string' && (typeof value !== 'string' || value.length > DB.schema[table][field][1]))
+                else if(DB.schema[table][field]['type'] === 'string' && (typeof value !== 'string' || value.length > DB.schema[table][field]['size']))
                     return false;
                 break;
             case 'like':
-                if(DB.schema[table][field][0] !== 'string' || typeof value !== 'string')
+                if(DB.schema[table][field]['type'] !== 'string' || typeof value !== 'string')
                     return false;
                 break;
         }
         return true;
-    }
-    function wherePart(where){
-        var Where = ' WHERE ';
-        where.forEach(function(item){
-            if(typeof item === 'object'){
-                var table = item[0][0];
-                var field = item[0][1];
-                var operator = item[1];
-                var condition = '';
-                switch (operator) {
-                    case '<':
-                    case 'less':
-                        condition = table+'.'+field + ' < ' + item[2] + '';
-                        break;
-                    case '>':
-                    case 'more':
-                        condition = table+'.'+field + ' > ' + item[2] + '';
-                        break;
-                    case 'between':
-                        condition = table+'.'+field + ' between ' + item[2] + ' and ' + item[3];
-                        break;
-                    case '=':
-                    case 'equal':
-                        condition = table+'.'+field + ' = ' + item[2] + '';
-                        break;
-                    case 'like':
-                        condition = table+'.'+field + ' ILIKE \'%' + item[2] + '%\' ';
-                        break;
-                    case '!=':
-                    case 'not equal':
-                        condition = table+'.'+field + ' != ' + item[2] + '';
-                        break;
-                }
-                Where += '('+condition+')';
-            }
-            else if(typeof item === 'string' && (item.toLowerCase()==='and' || item.toLowerCase()==='or')){
-                Where += (' '+item.toUpperCase()+' ');
-            }
-        });
-        return Where;
-    }
+    };
     
-    var public = {};
-    /*
-     * Database tables schemas and field patterns
-     */
-    public.schema = schemas; 
     /*
      * Method creates SELECT SQL by passing data and sends query
      * 
@@ -98,7 +111,7 @@ var DB = (function(){
      * @param object params | ex: {'where':[[[table,field],equals,value],'and',...],
      *                             'order':{'by':[[table,field],...],'direction':'asc'},
      *                             'limit':[offset,limit]}
-     * @param function callback(result) 
+     * @param function callback(result, err) 
      */
     public.select = function(fields, from, params, callback){
         var Selection = 'SELECT ';
@@ -139,7 +152,10 @@ var DB = (function(){
                 Selection += 'ASC';
         }
         if(params.hasOwnProperty('limit')){
-            Selection += (' LIMIT '+params.limit[1]+' OFFSET '+params.limit[0]);
+            if(params.limit.hasOwnProperty('amount'))
+                Selection += ' LIMIT '+params.limit.amount;
+            if(params.limit.hasOwnProperty('offset'))
+                Selection += ' OFFSET '+params.limit.offset;
         }
         Selection += ';';
         
@@ -150,14 +166,14 @@ var DB = (function(){
      * 
      * @param string table
      * @param object data | ex {'field1':'value', 'field2':'value'....}
-     * @param function callback(statuscode) 
+     * @param function callback(result, err) 
      */
     public.insert = function(table, data, callback){
         var Insert = 'INSERT INTO '+table+ ' ('+data.keys().join(', ')+') VALUES (';
         var vals = [];
         for(var key in data){
-            if(false === data[key].match(DB.schema[table][key][3]))
-                return callback(400);
+            if(false === DB.schema.check([[table,key],'match',data[key]]))
+                return callback({},{'status':400,'desc':'Wasn\'t created. Error in field '+table+'.'+key});
             vals.push('\''+data[key]+'\'');
         }
         Insert += (vals.join(', ')+');');
@@ -169,12 +185,14 @@ var DB = (function(){
      * @param string table
      * @param object data | ex {'field1':'value', 'field2':'value'....}
      * @param array where |ex [[[table,field],equals,value],'and',...]
-     * @param function callback(statuscode)
+     * @param function callback(result, err)
      */
     public.update = function(table, data, where, callback){
         var Update = 'UPDATE '+table+' SET ';
         var vals = [];
         for(var key in data){
+            if(false === DB.schema.check([[table,key],'match',data[key]]))
+                return callback({},{'status':304,'desc':'Wasn\'t modified. Error in field '+table+'.'+key});
             vals.push(key+'=\''+data[key]+'\'');
         }
         Update += (vals.join(', '));
@@ -187,11 +205,10 @@ var DB = (function(){
      * 
      * @param string table
      * @param array what |ex [[[table,field],equals,value],'and',...]
-     * @param function callback(statuscode)
+     * @param function callback(result,err)
      */
     public.delete = function(table, what, callback){
         var Delete = 'DELETE FROM '+table+wherePart(what)+';';
-        
         return sendQuery(Delete, callback);
     };
     return public;

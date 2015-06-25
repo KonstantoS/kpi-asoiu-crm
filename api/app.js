@@ -3,18 +3,17 @@ var path = require('path');
 var logger = require('morgan');
 var bodyParser = require('body-parser');
 
-//var routes = require('./routes/index');
-//var users = require('./routes/users');
+var users = require('./controllers/users');
 
 var app = express();
 
 app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+//app.use(bodyParser.json());
+//app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
-
+app.set('env','development');
 //app.use('/', routes);
-//app.use('/users', users);
+app.use('/users', users);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -27,7 +26,7 @@ app.use(function(req, res, next) {
 
 // development error handler
 // will print stacktrace
-if (app.get('env') === 'development') {
+/*if (app.get('env') === 'development') {
   app.use(function(err, req, res, next) {
     res.status(err.status || 500);
     res.render('error', {
@@ -46,17 +45,5 @@ app.use(function(err, req, res, next) {
     error: {}
   });
 });
-
-var db = require('./libs/database');
-db.select('all',['users'],{
-    'where':[[['users','id'],'less',10],'and',[['users','email'],'like','asoui']],
-    'order':{
-        'by':[['users','id']],
-        'direction':'desc'
-    },
-    limit:[0,5]
-},function(result){
-    console.log(result.rows);
-});
-
+*/
 module.exports = app;
