@@ -5,6 +5,7 @@ var DB = (function(){
     var conString = process.env.DATABASE_URL || 'postgres://'+config.get('db:user')+':'+config.get('db:pass')+'@'+config.get('db:host')+'/'+config.get('db:name');
     
     function sendQuery(queryString, _return){   
+        console.log(queryString);
         pg.connect(conString, function(err, client, done){
           if (err) {
             return _return({}, {'status':500,'desc':'Error fetching client from pool:'+err});
@@ -59,7 +60,7 @@ var DB = (function(){
                     }
                     Where += '('+condition+')';
                 }
-                else if(typeof item === 'string' && (item.toLowerCase()==='and' || item.toLowerCase()==='or')){
+                else if(typeof item === 'string' && (item.toLowerCase()==='and' || item.toLowerCase()==='or' ||item === '(' || item === ')')){
                     Where += (' '+item.toUpperCase()+' ');
                 }
             });

@@ -13,4 +13,19 @@ router.get('/', function(req, res, next) {
     });
 });
 
+router.post('/',function(req,res,next){
+    res.json(req.body);
+});
+
+router.get('/:id',function(req,res,next){
+    var user = new User();
+    user.byId(req.params.id,function(user,err){
+        if(typeof err !== 'object')
+            res.json(user);
+        else{
+            res.json(err);
+        }
+    });
+});
+
 module.exports = router;

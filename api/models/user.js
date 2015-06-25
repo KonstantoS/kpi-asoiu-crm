@@ -68,7 +68,7 @@ User.prototype = {
                     if(db.schema.users[field].encrypted)
                         usersProp[field] = encrypt(usersProp[field]);
                     if(db.schema.check([['users',field],'match',usersProp[field]]))
-                        whereArr.push([['users',field],'match',usersProp[field]]);
+                        whereArr.push([['users',field],'=',usersProp[field]]);
                     i++;
                 }
             }
@@ -97,15 +97,16 @@ User.prototype = {
             return callback(usersData);
         });
     },
-    getInfo: function(userParams){
+    getInfo: function(userParams,callback){
         var _user = this;
         this.findUsers(userParams, {}, function(res,err){
             if(typeof err !== 'object')
                 _user.fill(res[0]);
+            callback(_user,err);
         });
     },
-    byId: function(uid){
-        this.getInfo({'id':uid});
+    byId: function(uid,callback){
+        this.getInfo({'id':uid},callback);
     }
 };
 function eraseUser(_this){
