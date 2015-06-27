@@ -3,15 +3,26 @@ var router = express.Router();
 var User = require('../models/user');
 
 /* GET all users list */
-router.get('/', function(req, res) {
+router.get('/',function(req, res, next) {
     var users = new User();
     var returnParams = {
         'fields':['id','login','name','role','position','about','avatar_url']
     };
     
-    //Add sort and order
+    //?order[by]=&order[direction]=&limit=&offset=
+    if(req.query.hasOwnProperty('limit') || req.query.hasOwnProperty('offset')){
+        returnParams.limit = {};
+        if(req.query.hasOwnProperty('limit'))
+            returnParams.limit.limit = parseInt(req.query.limit);
+        if(req.query.hasOwnProperty('offset'))
+            returnParams.limit.offset = parseInt(req.query.offset);
+    }
+    if(req.query.hasOwnProperty('order')){
+        returnParams.order = {'direction':req.query.order.direction,'by':[['users',req.query.order.by]]};
+    }
     
-    users.findUsers('all', returnParams,function(result,err){
+    console.log(req.currentUser);
+    users.findUsers('all', returnParams, function(result,err){
         if(typeof err === 'object')
             return res.json(err);
         else
