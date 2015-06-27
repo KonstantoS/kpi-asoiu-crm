@@ -2,17 +2,25 @@ var express = require('express');
 var path = require('path');
 var logger = require('morgan');
 var bodyParser = require('body-parser');
+var multer = require('multer');
 
 var users = require('./controllers/users');
 
 var app = express();
 
 app.use(logger('dev'));
-//app.use(bodyParser.json());
-//app.use(bodyParser.urlencoded({ extended: false }));
+app.use(multer({
+  dest: './uploads/',
+  rename: function (fieldname, filename) {
+    return filename.replace(/\W+/g, '-').toLowerCase() + Date.now();
+  }
+}));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('env','development');
 //app.use('/', routes);
+
 app.use('/users', users);
 
 // catch 404 and forward to error handler

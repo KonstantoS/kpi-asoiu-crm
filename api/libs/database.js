@@ -45,6 +45,8 @@ var DB = (function(){
                             break;
                         case '=':
                         case 'equal':
+                            if(isNaN(parseInt(item[2])) === true)
+                                item[2] = "'"+item[2]+"'";
                             condition = table+'.'+field + ' = ' + item[2] + '';
                             break;
                         case 'has':
@@ -55,6 +57,8 @@ var DB = (function(){
                             break;
                         case '!=':
                         case 'not equal':
+                            if(isNaN(parseInt(item[2])) === true)
+                                item[2] = "'"+item[2]+"'";
                             condition = table+'.'+field + ' != ' + item[2] + '';
                             break;
                     }
@@ -116,13 +120,14 @@ var DB = (function(){
      */
     public.select = function(fields, from, params, callback){
         var Selection = 'SELECT ';
+        var flds = [];
         if(typeof fields === 'string' && (fields === '*' || fields === 'all')){
             Selection += '*';
         }
         else
             for(var table in fields){
-                for(var i; i<fields[table].length; i++){
-                    var fld ='';
+                for(var i=0; i<fields[table].length; i++){
+                    var fld;
                     if(fields[table][i] !== '*')
                         fld = table+'.'+fields[table][i];
                     else
@@ -170,7 +175,10 @@ var DB = (function(){
      * @param function callback(result, err) 
      */
     public.insert = function(table, data, callback){
-        var Insert = 'INSERT INTO '+table+ ' ('+data.keys().join(', ')+') VALUES (';
+        var fields = [], i = 0;
+        for (fields[i++] in data) {}
+        
+        var Insert = 'INSERT INTO '+table+ ' ('+fields.join(', ')+') VALUES (';
         var vals = [];
         for(var key in data){
             if(false === DB.schema.check([[table,key],'match',data[key]]))
@@ -194,7 +202,8 @@ var DB = (function(){
         for(var key in data){
             if(false === DB.schema.check([[table,key],'match',data[key]]))
                 return callback({},{'status':304,'desc':'Wasn\'t modified. Error in field '+table+'.'+key});
-            vals.push(key+'=\''+data[key]+'\'');
+            if(false === DB.schema[table][key].hasOwnProperty('primary'))
+                vals.push(key+'=\''+data[key]+'\'');
         }
         Update += (vals.join(', '));
         Update += wherePart(where)+';';

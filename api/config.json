@@ -2,6 +2,12 @@
     "port": 3000,
     "db": {
         "host": "localhost",
+        "name": "kpi_web_api",
+        "user": "asoiu", 
+        "pass": "kpi-asoiu" 
+    },
+    "db1": {
+        "host": "localhost",
         "name": "acdp_development",
         "user": "acdp", 
         "pass": "asoiu" 

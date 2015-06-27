@@ -7,8 +7,7 @@ var config = require('../libs/config');
 User = function(data){
     for(var field in data){
         if(db.schema.users.hasOwnProperty(field)){
-            if(!this.set(field,data[field]))
-                this[field] = null;
+            this.set(field,data[field]);
         }
     }
 };
@@ -16,10 +15,11 @@ User.prototype = {
     fill: function(fields){
         for(var field in fields){
             if(db.schema.users.hasOwnProperty(field))
-                if(this.set(field, fields[field]) !== true){
-                    eraseUser(this);
-                    return false;
-                }
+                if(db.schema.users[field].primary !== true)
+                    if(this.set(field, fields[field]) !== true){
+                        eraseUser(this);
+                        return {'status':400,'desc':'User wasn\'t created. Wrong data in field: '+field};
+                    }
         }
         return true;
     },
@@ -42,21 +42,35 @@ User.prototype = {
                     data[key] = this[key];
             }
         }
-        if(this.id === null){
+        if(false === this.hasOwnProperty('id')){
             this.findUsers({'login':this.login},{},function(res,err){
                 if(typeof err === 'object')
                     if(err.status === 404)
-                        db.insert('users',data,callback);
+                        db.insert('users',data,function(result,err){
+                            if(typeof err !== 'object')
+                                return callback({'status':200,'desc':'User was created.'});
+                            else
+                                return callback(err);
+                        });
                 else
-                    return callback({},{'status':400,'desc':'User wasn\'t created. Login isn\'t avaliable.'});
+                    return callback({'status':400,'desc':'User wasn\'t created. Login isn\'t avaliable.'});
             });
         }
+        else if(false === isNaN(parseInt(this.id)))
+            db.update('users',data,[[['users','id'],'=',this.id]],function(result,err){
+                if(typeof err !== 'object')
+                    return callback({'status':201,'desc':'User was updated.'});
+                else
+                    return callback(err);
+            });
         else
-            db.update('users',data,[['users','id'],'match',this.id],callback);
+            return callback({'status':400,'desc':'Bad request. User id is not integer value'});
     },
     findUsers: function(usersProp, params, callback, single){
         single = (single !== undefined) ? single : false;
+        usersProp = (usersProp === 'all') ? {} : usersProp; 
         var queryParams = {};
+        var fields;
         
         if(typeof usersProp === 'object'){
             var whereArr = [];
@@ -83,10 +97,22 @@ User.prototype = {
             queryParams.limit = params.limit;
         if(single)
             queryParams.limit = {'amount':1};
+        if(params.hasOwnProperty('fields')){
+            if(params.fields === 'all')
+                fields = params.fields;
+            else{
+                fields = {};
+                fields.users = [];
+                params.fields.forEach(function(field){
+                    if(db.schema.users.hasOwnProperty(field))
+                        fields.users.push(field);
+                });
+            }
+        }
         
-        db.select('all',['users'],queryParams,function(result,err){
+        db.select(fields,['users'],queryParams,function(result,err){
             if(typeof err === 'object')
-                return callback({},err);
+                return callback(err);
             if(result.rowCount===0)
                 return callback({},{'status':404,'desc':'User not found.'});
             var usersData = [];
@@ -99,14 +125,24 @@ User.prototype = {
     },
     getInfo: function(userParams,callback){
         var _user = this;
-        this.findUsers(userParams, {}, function(res,err){
+        this.findUsers(userParams, {
+            'fields':['id','login','name','email','role','position','about','avatar_url']
+        }, function(res,err){
             if(typeof err !== 'object')
-                _user.fill(res[0]);
-            callback(_user,err);
+                _user = new User(res[0]);
+            return callback(_user,err);
         });
     },
     byId: function(uid,callback){
-        this.getInfo({'id':uid},callback);
+        this.getInfo({'id':parseInt(uid)},callback);
+    },
+    remove: function(callback){
+        db.delete(['users'],[[['users','id'],'=',this.id]],function(result,err){
+            if(typeof err === 'object')
+                return callback(err);
+            else
+                return callback({'status':200,desc:'User was deleted.'});
+        });
     }
 };
 function eraseUser(_this){
