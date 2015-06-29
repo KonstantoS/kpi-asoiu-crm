@@ -21,7 +21,7 @@ router.get('/',function(req, res, next) {
         returnParams.order = {'direction':req.query.order.direction,'by':[['users',req.query.order.by]]};
     }
     
-    console.log(req.currentUser);
+    //console.log(req.currentUser);
     users.findUsers('all', returnParams, function(result,err){
         if(typeof err === 'object')
             return res.json(err);
@@ -75,7 +75,6 @@ router.delete('/:id',function(req,res){
     var user = new User();
     user.byId(req.params.id,function(usr,err){
         if(typeof err !== 'object'){
-            console.log(usr);
             usr.remove(function(result){
                 res.json(result);
             });

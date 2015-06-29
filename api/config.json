@@ -13,6 +13,8 @@
         "pass": "asoiu" 
     },
     "security": {
-        "salt": "24oNjC2X"
+        "salt": "24oNjC2X",
+        "auth_salt": "",
+        "token_age": "7 DAYS"
     }
 }

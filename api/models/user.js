@@ -112,7 +112,7 @@ User.prototype = {
         
         db.select(fields,['users'],queryParams,function(result,err){
             if(typeof err === 'object')
-                return callback(err);
+                return callback({},err);
             if(result.rowCount===0)
                 return callback({},{'status':404,'desc':'User not found.'});
             var usersData = [];
@@ -135,6 +135,21 @@ User.prototype = {
     },
     byId: function(uid,callback){
         this.getInfo({'id':parseInt(uid)},callback);
+    },
+    byLogin: function(login, callback){
+        this.getInfo({'login':login},callback);
+    },
+    verifyUser: function(login,passwd,callback){       
+        this.findUsers({
+            'login':login,
+            'passwd':passwd
+        }, {'fields':['id','login','name','email','role']}, 
+        function(res, err){
+            if(typeof err === 'object')
+                return callback(err);
+            else
+                return callback(res[0]);
+        }); 
     },
     remove: function(callback){
         db.delete(['users'],[[['users','id'],'=',this.id]],function(result,err){

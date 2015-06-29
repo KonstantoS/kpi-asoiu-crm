@@ -10,6 +10,12 @@ var schemas = {
         'avatar_url':{'type':'string','size':200},			
         'about':{'type':'string','size':255},			
         'creation_time':{'type':'timestamp','size':26}
+    },
+    'auth_tokens':{
+        'uid':{'type':'int'},
+        'token':{'type':'string','size':64},
+        'creation_time':{'type':'timestamp','size':26},
+        'expiration_time':{'type':'timestamp','size':26}
     }
 };
 module.exports = schemas;

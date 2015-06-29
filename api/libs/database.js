@@ -25,7 +25,7 @@ var DB = (function(){
             if (err) {
               return _return({}, {'status':500,'desc':'Error running query:'+err});
             }
-            _return(result);
+            return _return(result);
           });
         });
     }
@@ -55,7 +55,7 @@ var DB = (function(){
                             break;
                         case '=':
                         case 'equal':
-                            if(isNaN(parseInt(item[2])) === true)
+                            if(DB.schema[table][field].type !== 'int')
                                 item[2] = "'"+sqlEscape(item[2])+"'";
                             condition = table+'.'+field + ' = ' + item[2] + '';
                             break;
@@ -67,7 +67,7 @@ var DB = (function(){
                             break;
                         case '!=':
                         case 'not equal':
-                            if(isNaN(parseInt(item[2])) === true)
+                            if(DB.schema[table][field].type !== 'int')
                                 item[2] = "'"+item[2]+"'";
                             condition = table+'.'+field + ' != ' + item[2] + '';
                             break;
@@ -184,20 +184,31 @@ var DB = (function(){
      * @param object data | ex {'field1':'value', 'field2':'value'....}
      * @param function callback(result, err) 
      */
-    public.insert = function(table, data, callback){
+    public.insert = function(table, data, callback, returnInserted){
         var fields = [], i = 0;
         for (fields[i++] in data) {}
         
         var Insert = 'INSERT INTO '+table+ ' ('+fields.join(', ')+') VALUES (';
         var vals = [];
-        for(var key in data){
+        for(var key in data){ 
             if(false === DB.schema.check([[table,key],'match',data[key]]))
                 return callback({},{'status':400,'desc':'Wasn\'t created. Error in field '+table+'.'+key});
             if(DB.schema[table][key].type === 'string')
                 data[key] = "'"+sqlEscape(data[key])+"'";
             vals.push(data[key]);
         }
-        Insert += (vals.join(', ')+');');
+        Insert += (vals.join(', ')+')');
+        if(returnInserted === true){
+            Insert += ' RETURNING ';
+            var fields = [];
+            for(var field in DB.schema[table]){
+                fields.push(field);
+            }
+            Insert += fields.join(', ');
+        }
+        
+        Insert += ';';
+        
         return sendQuery(Insert,callback);
     };
     /*
