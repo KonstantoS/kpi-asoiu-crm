@@ -125,27 +125,30 @@ var DB = (function(){
      * @param array from | ex: [table,...]
      * @param object params | ex: {'where':[[[table,field],equals,value],'and',...],
      *                             'order':{'by':[[table,field],...],'direction':'asc'},
-     *                             'limit':[offset,limit]}
-     * @param function callback(result, err) 
+     *                             'limit':{offset:num,limit:num}}
+     * @param function callback = function(result, err) 
      */
     public.select = function(fields, from, params, callback){
         var Selection = 'SELECT ';
         var flds = [];
-        if(typeof fields === 'string' && (fields === '*' || fields === 'all')){
+        if(fields === '*' || fields === 'all'){
             Selection += '*';
         }
         else
             for(var table in fields){
-                for(var i=0; i<fields[table].length; i++){
-                    var fld;
-                    if(fields[table][i] !== '*')
-                        fld = table+'.'+fields[table][i];
-                    else
-                        fld = table+'.'+'*';
-                    flds.push(fld);
-                }
-                Selection += flds.join(', ');
+                if(fields[table] === '*' || fields[table] === 'all')
+                    flds.push(table+'.'+'*');
+                else
+                    for(var i=0; i<fields[table].length; i++){
+                        var fldStr;
+                        if(fields[table][i] !== '*')
+                            fldStr = table+'.'+fields[table][i];
+                        else
+                            fldStr = table+'.'+'*';
+                        flds.push(fldStr);
+                    }
             }
+        Selection += flds.join(', ');
         Selection += ' FROM ';
         from.forEach(function(val,i,from){
             from[i] = val;
@@ -182,7 +185,8 @@ var DB = (function(){
      * 
      * @param string table
      * @param object data | ex {'field1':'value', 'field2':'value'....}
-     * @param function callback(result, err) 
+     * @param function callback = function(result, err)
+     * @param bool returnInserted
      */
     public.insert = function(table, data, callback, returnInserted){
         var fields = [], i = 0;
@@ -217,7 +221,7 @@ var DB = (function(){
      * @param string table
      * @param object data | ex {'field1':'value', 'field2':'value'....}
      * @param array where |ex [[[table,field],equals,value],'and',...]
-     * @param function callback(result, err)
+     * @param function callback = function(result, err)
      */
     public.update = function(table, data, where, callback){
         var Update = 'UPDATE '+table+' SET ';
@@ -241,7 +245,7 @@ var DB = (function(){
      * 
      * @param string table
      * @param array what |ex [[[table,field],equals,value],'and',...]
-     * @param function callback(result,err)
+     * @param function callback = function(result, err)
      */
     public.delete = function(table, what, callback){
         var Delete = 'DELETE FROM '+table+wherePart(what)+';';

@@ -1,3 +1,12 @@
+/*
+ * This module stores all database schemas.
+ * Avaliable props:
+ * type: JavaSctipt datatype
+ * size: max field length
+ * primary: bool if key is primary
+ * pattern: RegExp (checking in DB module)
+ * encrypted: bool 
+ */
 var schemas = {
     'users':{
         'id':{'type':'int','primary':true},

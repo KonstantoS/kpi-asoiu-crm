@@ -25,16 +25,25 @@ var Auth = (function(){
         var params = req.headers.authorization.split(':');
         var uid = params[0];
         var token = params[1];
-        db.select('all',['auth_tokens'],
-        {
-            'where':[[['auth_tokens','uid'],'=',uid],'and',[['auth_tokens','token'],'=',token]]
-        },function(rslt,err){
+        db.select({
+            'users':['id','login','name','role','position','avatar_url'],
+            'auth_tokens':'all'
+        },['auth_tokens','users'],
+        {'where':[[['auth_tokens','uid'],'=',uid],'and',[['auth_tokens','token'],'=',token],'and',[['users','id'],'=',uid]]},
+        function(rslt,err){
             if(typeof err === 'object'){
                 return res.json(err);
             }
             else if(rslt.rowCount > 0){
-                if(new Date() < new Date(rslt.rows[0].expiration_time))
+                if(new Date() < new Date(rslt.rows[0].expiration_time)){
+                    req.currentUser = {
+                        'id':rslt.rows[0].id,
+                        'login':rslt.rows[0].login,
+                        'role':rslt.rows[0].role
+                    };
+                    
                     return next();
+                }
                 else{
                     db.delete('auth_tokens',[[['auth_tokens','uid'],'=',uid],'and',[['auth_tokens','token'],'=',token]],function(rslt,err){
                         if(typeof err !== 'object')
@@ -61,6 +70,12 @@ var Auth = (function(){
                     next();
                 });
             }
+        });
+    };
+    public.closeSessions = function(uid,currToken){
+        db.delete('auth_tokens',[[['auth_tokens','uid'],'=',uid],'and',[['auth_tokens','token'],'!=',currToken]],function(rslt,err){
+            if(typeof err !== 'object')
+                return res.json({'status':200,'desc':'All sessions where destroyed!'});
         });
     };
     return public;
