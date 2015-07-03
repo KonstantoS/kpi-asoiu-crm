@@ -18,14 +18,14 @@ var DB = (function(){
         console.log(queryString);
         pg.connect(conString, function(err, client, done){
           if (err) {
-            return _return({}, {'status':500,'desc':'Error fetching client from pool:'+err});
+            return _return({'status':500,'desc':'Error fetching client from pool:'+err});
           }
           client.query(queryString, function(err, result) {
             done();
             if (err) {
-              return _return({}, {'status':500,'desc':'Error running query:'+err});
+              return _return({'status':500,'desc':'Error running query:'+err});
             }
-            return _return(result);
+            return _return({}, result);
           });
         });
     }
@@ -123,10 +123,11 @@ var DB = (function(){
      * 
      * @param object fields | ex: {'table':[field,...],..}
      * @param array from | ex: [table,...]
-     * @param object params | ex: {'where':[[[table,field],equals,value],'and',...],
+     * @param object params | ex: {'join':{'type':inner,'table':table,'on':[[[table,field]],'=',[table,field]]}
+     *                             'where':[[[table,field],equals,value],'and',...],
      *                             'order':{'by':[[table,field],...],'direction':'asc'},
      *                             'limit':{offset:num,limit:num}}
-     * @param function callback = function(result, err) 
+     * @param function callback = function(err,result) 
      */
     public.select = function(fields, from, params, callback){
         var Selection = 'SELECT ';
@@ -154,6 +155,15 @@ var DB = (function(){
             from[i] = val;
         });
         Selection += from.join(', ');
+        if(params.hasOwnProperty('join')){
+            var on=[];
+            Selection += (' '+params.join.type.toUpperCase()+' JOIN '+params.join.table);
+            Selection += ' ON ';
+            for(var i=0;i<params.join.on.length;i++){
+                on.push(params.join.on[i][0][0]+'.'+params.join.on[i][0][1]+'='+params.join.on[i][2][0]+'.'+params.join.on[i][2][1]);
+            }
+            Selection += on.join(', ');
+        }
         if(params.hasOwnProperty('where')){
             Selection += wherePart(params.where);
         }
@@ -185,7 +195,7 @@ var DB = (function(){
      * 
      * @param string table
      * @param object data | ex {'field1':'value', 'field2':'value'....}
-     * @param function callback = function(result, err)
+     * @param function callback = function(err,result) 
      * @param bool returnInserted
      */
     public.insert = function(table, data, callback, returnInserted){
@@ -196,7 +206,7 @@ var DB = (function(){
         var vals = [];
         for(var key in data){ 
             if(false === DB.schema.check([[table,key],'match',data[key]]))
-                return callback({},{'status':400,'desc':'Wasn\'t created. Error in field '+table+'.'+key});
+                return callback({'status':400,'desc':'Wasn\'t created. Error in field '+table+'.'+key});
             if(DB.schema[table][key].type === 'string')
                 data[key] = "'"+sqlEscape(data[key])+"'";
             vals.push(data[key]);
@@ -221,15 +231,15 @@ var DB = (function(){
      * @param string table
      * @param object data | ex {'field1':'value', 'field2':'value'....}
      * @param array where |ex [[[table,field],equals,value],'and',...]
-     * @param function callback = function(result, err)
+     * @param function callback = function(err,result) 
      */
     public.update = function(table, data, where, callback){
         var Update = 'UPDATE '+table+' SET ';
         var vals = [];
         for(var key in data){
             if(false === DB.schema.check([[table,key],'match',data[key]]))
-                return callback({},{'status':304,'desc':'Wasn\'t modified. Error in field '+table+'.'+key});
-            if(false === DB.schema[table][key].hasOwnProperty('primary')){
+                return callback({'status':304,'desc':'Wasn\'t modified. Error in field '+table+'.'+key});
+            if(false === DB.schema[table][key].hasOwnProperty('sequence')){
                 if(DB.schema[table][key].type === 'string')
                     data[key] = "'"+sqlEscape(data[key])+"'";
                 vals.push(key+'='+data[key]);
@@ -245,7 +255,7 @@ var DB = (function(){
      * 
      * @param string table
      * @param array what |ex [[[table,field],equals,value],'and',...]
-     * @param function callback = function(result, err)
+     * @param function callback = function(err,result)
      */
     public.delete = function(table, what, callback){
         var Delete = 'DELETE FROM '+table+wherePart(what)+';';

@@ -11,17 +11,20 @@ var Auth = (function(){
             'uid':parseInt(userID),
             'token':token,
             'expiration_time':"NOW()+INTERVAL '"+config.get('security:token_age')+"'"
-        },function(res, err){
-            if(typeof err === 'object')
+        },function(err, res){
+            if(err.hasOwnProperty('status'))
                 return callback(err);
             else
-                return callback(res.rows[0]);
+                return callback({},res.rows[0]);
         }, true);
     }
     function APItoken(){
         
     }
     public.checkAuth = function(req,res,next){
+        if(req.headers.hasOwnProperty('authorization') === false)
+            return res.json({'status':403,'desc':'Access denided!'});
+        
         var params = req.headers.authorization.split(':');
         var uid = params[0];
         var token = params[1];
@@ -30,37 +33,38 @@ var Auth = (function(){
             'auth_tokens':'all'
         },['auth_tokens','users'],
         {'where':[[['auth_tokens','uid'],'=',uid],'and',[['auth_tokens','token'],'=',token],'and',[['users','id'],'=',uid]]},
-        function(rslt,err){
-            if(typeof err === 'object'){
+        function(err,result){
+            if(err.hasOwnProperty('status')){
                 return res.json(err);
             }
-            else if(rslt.rowCount > 0){
-                if(new Date() < new Date(rslt.rows[0].expiration_time)){
-                    req.currentUser = {
-                        'id':rslt.rows[0].id,
-                        'login':rslt.rows[0].login,
-                        'role':rslt.rows[0].role
-                    };
+            else if(result.rowCount > 0){
+                if(new Date() < new Date(result.rows[0].expiration_time)){
+                    /*req.currentUser = {
+                        'id':result.rows[0].id,
+                        'login':result.rows[0].login,
+                        'role':result.rows[0].role
+                    };*/
+                    req.currentUser = new User(result.rows[0]);
                     
                     return next();
                 }
                 else{
-                    db.delete('auth_tokens',[[['auth_tokens','uid'],'=',uid],'and',[['auth_tokens','token'],'=',token]],function(rslt,err){
-                        if(typeof err !== 'object')
+                    db.delete('auth_tokens',[[['auth_tokens','uid'],'=',uid],'and',[['auth_tokens','token'],'=',token]],function(err,result){
+                        if(err.hasOwnProperty('status') === false)
                             return res.json({'status':401,'desc':'Your token using period expired. Please relogin.'});
                     });
                 }
             }
             else{
-                return res.json({'status':401,'desc':'Your token using period expired. Please relogin.'});
+                return res.json({'status':401,'desc':'Your token using period expired. Please login.'});
             }
         });
     };
     public.signIn = function(req,res,next){
         var user = new User();
-        user.verifyUser(req.body.login,req.body.passwd, function(result){
-            if(result.hasOwnProperty('status')){
-                res.json(result);
+        user.verifyUser(req.body.login,req.body.passwd, function(err,result){
+            if(err.hasOwnProperty('status')){
+                res.json(err);
             }
             else{
                 createToken(result.id, function(tokenData){
@@ -73,8 +77,8 @@ var Auth = (function(){
         });
     };
     public.closeSessions = function(uid,currToken){
-        db.delete('auth_tokens',[[['auth_tokens','uid'],'=',uid],'and',[['auth_tokens','token'],'!=',currToken]],function(rslt,err){
-            if(typeof err !== 'object')
+        db.delete('auth_tokens',[[['auth_tokens','uid'],'=',uid],'and',[['auth_tokens','token'],'!=',currToken]],function(err,result){
+            if(err.hasOwnProperty('status') === false)
                 return res.json({'status':200,'desc':'All sessions where destroyed!'});
         });
     };

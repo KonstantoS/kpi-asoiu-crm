@@ -8,6 +8,7 @@ router.get('/',function(req, res, next) {
     var returnParams = {
         'fields':['id','login','name','role','position','about','avatar_url']
     };
+    var userParams = 'all';
     
     //?order[by]=&order[direction]=&limit=&offset=
     if(req.query.hasOwnProperty('limit') || req.query.hasOwnProperty('offset')){
@@ -20,22 +21,29 @@ router.get('/',function(req, res, next) {
     if(req.query.hasOwnProperty('order')){
         returnParams.order = {'direction':req.query.order.direction,'by':[['users',req.query.order.by]]};
     }
-    
+    if(req.query.hasOwnProperty('search'))
+        userParams = req.query.search;
+
+    //////////////////////////////////////////////////////////////////////////
     console.log(req.currentUser);
-    users.findUsers('all', returnParams, function(result,err){
-        if(typeof err === 'object')
+    
+    users.findUsers(userParams, returnParams, function(err,result){
+        if(err.hasOwnProperty('status'))
             return res.json(err);
         else
             res.json(result);
     });
 });
-/* POST requist creates new user */
+/* POST request creates new user */
 router.post('/',function(req,res){
     var user = new User(); //Don't using constructor to avoid errors in fields. Otherwise filler is beeing used.
     var fillTry = user.fill(req.body);
     if(true === fillTry){
-        user.save(function(result){
-            res.json(result);
+        user.save(function(err,result){
+            if(err.hasOwnProperty('status'))
+                return res.json(err);
+            else
+                res.json(result);
         });
     }
     else
@@ -44,8 +52,8 @@ router.post('/',function(req,res){
 
 router.get('/:id',function(req,res){
     var user = new User();
-    user.byId(req.params.id,function(user,err){
-        if(typeof err !== 'object')
+    user.byId(req.params.id,function(err,user){
+        if(err.hasOwnProperty('status') === false)
             res.json(user);
         else{
             res.json(err);
@@ -53,14 +61,17 @@ router.get('/:id',function(req,res){
     });
 });
 router.put('/:id',function(req,res){
-    var user = new User();
-    user.byId(req.params.id,function(usr,err){
-        if(typeof err !== 'object'){
+    /*var user = new User();
+    user.byId(req.params.id,function(err,usr){
+        if(err.hasOwnProperty('status') === false){
             var user = new User({'id':usr.id});
             var fillTry = user.fill(req.body);
             if(true === fillTry){
-                user.save(function(result){
-                    res.json(result);
+                user.save(function(err,result){
+                    if(err.hasOwnProperty('status'))
+                        return res.json(err);
+                    else
+                        res.json(result);
                 });
             }
             else
@@ -69,20 +80,77 @@ router.put('/:id',function(req,res){
         else{
             res.json(err);
         }
-    });
+    });*/
+    var user = new User({'id':parseInt(req.params.id)});
+    var fillTry = user.fill(req.body);
+    if(true === fillTry){
+        user.save(function(err,result){
+            if(err.hasOwnProperty('status'))
+                return res.json(err);
+            else
+                res.json(result);
+        });
+    }
+    else
+        res.json(fillTry);
 });
 router.delete('/:id',function(req,res){
-    var user = new User();
-    user.byId(req.params.id,function(usr,err){
-        if(typeof err !== 'object'){
-            usr.remove(function(result){
-                res.json(result);
+    /*var user = new User();
+    user.byId(req.params.id,function(err, usr){
+        if(err.hasOwnProperty('status') === false){
+            usr.remove(function(err,result){
+                if(err.hasOwnProperty('status'))
+                    return res.json(err);
+                else
+                    res.json(result);
             });
         }
         else{
             res.json(err);
         }
+    });*/
+    var user = new User({'id':parseInt(req.params.id)});
+    user.remove(function(err,result){
+        if(err.hasOwnProperty('status'))
+            return res.json(err);
+        else
+            res.json(result);
     });
 });
+
+/*
+ * Contacts part
+ */
+router.get('/:id/contacts',function(req,res){
+    var user = new User({'id':parseInt(req.params.id)});
+    var returnParams = {
+        'fields':['id','login','name','role','position','about','avatar_url']
+    };
+    var userParams = 'all';
+    
+    //?order[by]=&order[direction]=&limit=&offset=
+    if(req.query.hasOwnProperty('limit') || req.query.hasOwnProperty('offset')){
+        returnParams.limit = {};
+        if(req.query.hasOwnProperty('limit'))
+            returnParams.limit.limit = parseInt(req.query.limit);
+        if(req.query.hasOwnProperty('offset'))
+            returnParams.limit.offset = parseInt(req.query.offset);
+    }
+    if(req.query.hasOwnProperty('order')){
+        returnParams.order = {'direction':req.query.order.direction,'by':[['users',req.query.order.by]]};
+    }
+    if(req.query.hasOwnProperty('search'))
+        userParams = req.query.search;
+
+    user.getContacts(userParams,returnParams,function(err,result){
+        if(err.hasOwnProperty('status'))
+            return res.json(err);
+        else
+            res.json(result);
+    });
+    
+});
+
+
 
 module.exports = router;
