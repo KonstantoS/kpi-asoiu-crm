@@ -14,18 +14,18 @@ var DB = (function(){
             .replace("\x00", "\\\x00")
             .replace("\x1a", "\\\x1a");
     }
-    function sendQuery(queryString, _return){   
+    function sendQuery(queryString, callback){   
         console.log(queryString);
         pg.connect(conString, function(err, client, done){
           if (err) {
-            return _return({'status':500,'desc':'Error fetching client from pool:'+err});
+            return callback({'status':500,'desc':'Error fetching client from pool:'+err});
           }
           client.query(queryString, function(err, result) {
             done();
             if (err) {
-              return _return({'status':500,'desc':'Error running query:'+err});
+              return callback({'status':500,'desc':'Error running query:'+err});
             }
-            return _return({}, result);
+            return callback({}, result);
           });
         });
     }
@@ -199,8 +199,13 @@ var DB = (function(){
      * @param bool returnInserted
      */
     public.insert = function(table, data, callback, returnInserted){
+        
+        //Equivalent of Object.keys() from ES6
         var fields = [], i = 0;
         for (fields[i++] in data) {}
+        
+        if(fields.length===0)
+            return callback({'status':400,'desc':'Error: nothing was added. Fields are empty.'});
         
         var Insert = 'INSERT INTO '+table+ ' ('+fields.join(', ')+') VALUES (';
         var vals = [];
@@ -211,7 +216,7 @@ var DB = (function(){
                 data[key] = "'"+sqlEscape(data[key])+"'";
             vals.push(data[key]);
         }
-        Insert += (vals.join(', ')+')');
+        Insert += (vals.join(', ')+') ');
         if(returnInserted === true){
             Insert += ' RETURNING ';
             var fields = [];
@@ -245,6 +250,8 @@ var DB = (function(){
                 vals.push(key+'='+data[key]);
             }
         }
+        if(vals.length===0)
+            return callback({'status':304,'desc':'Error: nothing was modified. Fields are empty.'});
         Update += (vals.join(', '));
         Update += wherePart(where)+';';
         

@@ -1,9 +1,10 @@
 var express = require('express');
 var router = express.Router();
 var User = require('../models/user');
+var access = require('../libs/rolemanager');
 
 /* GET all users list */
-router.get('/',function(req, res, next) {
+router.get('/', access.UserCanIn('users','browse'), function(req, res, next) {
     var users = new User();
     var returnParams = {
         'fields':['id','login','name','role','position','about','avatar_url']
@@ -28,100 +29,58 @@ router.get('/',function(req, res, next) {
     console.log(req.currentUser);
     
     users.findUsers(userParams, returnParams, function(err,result){
-        if(err.hasOwnProperty('status'))
-            return res.json(err);
-        else
-            res.json(result);
+        return res.json(result || err);
     });
 });
 /* POST request creates new user */
-router.post('/',function(req,res){
+router.post('/', access.UserCanIn('users','create'), function(req,res){
     var user = new User(); //Don't using constructor to avoid errors in fields. Otherwise filler is beeing used.
     var fillTry = user.fill(req.body);
     if(true === fillTry){
         user.save(function(err,result){
-            if(err.hasOwnProperty('status'))
-                return res.json(err);
-            else
-                res.json(result);
+            return res.json(result || err);
         });
     }
     else
         res.json(fillTry);
 });
 
-router.get('/:id',function(req,res){
+router.get('/:id', access.UserCanIn('users','browse'), function(req,res){
     var user = new User();
     user.byId(req.params.id,function(err,user){
-        if(err.hasOwnProperty('status') === false)
-            res.json(user);
-        else{
-            res.json(err);
-        }
+        return res.json(user || err);
     });
 });
-router.put('/:id',function(req,res){
-    /*var user = new User();
-    user.byId(req.params.id,function(err,usr){
-        if(err.hasOwnProperty('status') === false){
-            var user = new User({'id':usr.id});
-            var fillTry = user.fill(req.body);
-            if(true === fillTry){
-                user.save(function(err,result){
-                    if(err.hasOwnProperty('status'))
-                        return res.json(err);
-                    else
-                        res.json(result);
-                });
-            }
-            else
-                res.json(fillTry);
-        }
-        else{
-            res.json(err);
-        }
-    });*/
+router.put('/:id', access.UserCanIn('users','browse'), function(req,res){
+    var isCurrent = (req.currentUser.id === parseInt(req.params.id));
+    if(false === isCurrent && false === req.currentUser.canIn('users','modifyAll'))
+        return res.json({'status':403,'desc':'Access denieded! You can\'t modify user'});
+    
+    if(req.body.hasOwnProperty('role'))
+        if((isCurrent && (req.body.role < access.permissions.users.changeRole)) || (!isCurrent && false === req.currentUser.canIn('users','changeRole')))
+            return res.json({'status':304,'desc':'User was\'t updated. You can\'t change roles or downgrade own.'});
+    
     var user = new User({'id':parseInt(req.params.id)});
     var fillTry = user.fill(req.body);
     if(true === fillTry){
         user.save(function(err,result){
-            if(err.hasOwnProperty('status'))
-                return res.json(err);
-            else
-                res.json(result);
+            return res.json(result || err);
         });
     }
     else
         res.json(fillTry);
 });
-router.delete('/:id',function(req,res){
-    /*var user = new User();
-    user.byId(req.params.id,function(err, usr){
-        if(err.hasOwnProperty('status') === false){
-            usr.remove(function(err,result){
-                if(err.hasOwnProperty('status'))
-                    return res.json(err);
-                else
-                    res.json(result);
-            });
-        }
-        else{
-            res.json(err);
-        }
-    });*/
+router.delete('/:id', access.UserCanIn('users','modifyAll'), function(req,res){
     var user = new User({'id':parseInt(req.params.id)});
     user.remove(function(err,result){
-        if(err.hasOwnProperty('status'))
-            return res.json(err);
-        else
-            res.json(result);
+        return res.json(result || err);
     });
 });
 
 /*
  * Contacts part
  */
-router.get('/:id/contacts',function(req,res){
+router.get('/:id/contacts', access.UserCanIn('users','browse'), function(req,res){
     var user = new User({'id':parseInt(req.params.id)});
     var returnParams = {
         'fields':['id','login','name','role','position','about','avatar_url']
@@ -142,15 +101,34 @@ router.get('/:id/contacts',function(req,res){
     if(req.query.hasOwnProperty('search'))
         userParams = req.query.search;
 
+    
+    
     user.getContacts(userParams,returnParams,function(err,result){
-        if(err.hasOwnProperty('status'))
-            return res.json(err);
-        else
-            res.json(result);
+        return res.json(result || err);
     });
     
 });
-
-
+router.post('/:id/contacts', access.isCurrentUser, function(req,res){
+    if(req.currentUser.id !== parseInt(req.params.id))
+        res.json({'status':403,'desc':'Access denieded! You can\'t modify users\' contacts'});
+    
+    if(req.body.hasOwnProperty('contact_id') === false)
+        return res.json({'status':400,'desc':'Bad request. Contact ID is empty.'});
+    
+    req.currentUser.addContact(req.body.contact_id,function(err,result){
+        return res.json(result || err);
+    });    
+});
+router.delete('/:id/contacts', access.isCurrentUser, function(req,res){
+    if(req.currentUser.id !== parseInt(req.params.id))
+        res.json({'status':403,'desc':'Access denieded! You can\'t modify users\' contacts'});
+    
+    if(req.body.hasOwnProperty('contact_id') === false)
+        return res.json({'status':400,'desc':'Bad request. Contact ID is empty.'});
+    
+    req.currentUser.removeContact(req.body.contact_id, function(err,result){
+        return res.json(result || err);
+    });   
+});
 
 module.exports = router;

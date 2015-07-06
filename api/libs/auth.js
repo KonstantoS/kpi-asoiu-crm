@@ -67,11 +67,15 @@ var Auth = (function(){
                 res.json(err);
             }
             else{
-                createToken(result.id, function(tokenData){
-                    res.cookie('uid', tokenData.uid, { expires: new Date(tokenData.expiration_time)});
-                    res.cookie('_auth', tokenData.token, { expires: new Date(tokenData.expiration_time)});
-                    res.json({'status':200,'desc':'Successful login!'});
-                    next();
+                createToken(result.id, function(err, tokenData){
+                    if(err.hasOwnProperty('status'))
+                        res.json(err);
+                    else{
+                        res.cookie('uid', tokenData.uid, { expires: new Date(tokenData.expiration_time)});
+                        res.cookie('_auth', tokenData.token, { expires: new Date(tokenData.expiration_time)});
+                        res.json({'status':200,'desc':'Successful login!'});
+                        next();
+                    }
                 });
             }
         });
