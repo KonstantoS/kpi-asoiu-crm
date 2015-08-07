@@ -6,12 +6,12 @@ var multer = require('multer');
 var authModule = require('./libs/auth');
 
 var users = require('./controllers/users');
+var events = require('./controllers/events');
 
 var app = express();
 
 app.use(logger('dev'));
 app.set('env','development');
-
 
 app.use(multer({
   dest: './uploads/'
@@ -24,6 +24,7 @@ app.use('/login',authModule.signIn);
 app.use(authModule.checkAuth);
 
 app.use('/users', users);
+app.use('/events', events);
 
 
 // catch 404 and forward to error handler
@@ -40,7 +41,7 @@ app.use(function(req, res, next) {
 if (app.get('env') === 'development') {
   app.use(function(err, req, res, next) {
     res.status(err.status || 500);
-    res.render('error', {
+    res.json({
       message: err.message,
       error: err
     });
@@ -51,7 +52,7 @@ if (app.get('env') === 'development') {
 // no stacktraces leaked to user
 app.use(function(err, req, res, next) {
   res.status(err.status || 500);
-  res.render('error', {
+  res.json({
     message: err.message,
     error: {}
   });

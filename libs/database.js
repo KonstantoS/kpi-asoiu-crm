@@ -14,8 +14,8 @@ var DB = (function(){
             .replace("\x00", "\\\x00")
             .replace("\x1a", "\\\x1a");
     }
-    function sendQuery(queryString, callback){   
-        console.log(queryString);
+    function sendQuery(queryString, callback){
+        console.log('\x1b[33m%s\x1b[0m: ', queryString);
         pg.connect(conString, function(err, client, done){
           if (err) {
             return callback({'status':500,'desc':'Error fetching client from pool:'+err});
@@ -25,7 +25,7 @@ var DB = (function(){
             if (err) {
               return callback({'status':500,'desc':'Error running query:'+err});
             }
-            return callback({}, result);
+            return callback(null, result);
           });
         });
     }

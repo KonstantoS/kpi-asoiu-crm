@@ -1,6 +1,6 @@
 var pg = require('pg');
 var config = require('../libs/config');
-var userModel = require('../models/user');
+var User = require('../models/user');
 var db = require('../libs/database');
 var uuid = require('node-uuid');
 var Auth = (function(){
@@ -12,10 +12,10 @@ var Auth = (function(){
             'token':token,
             'expiration_time':"NOW()+INTERVAL '"+config.get('security:token_age')+"'"
         },function(err, res){
-            if(err.hasOwnProperty('status'))
+            if(err !== null)
                 return callback(err);
             else
-                return callback({},res.rows[0]);
+                return callback(null,res.rows[0]);
         }, true);
     }
     function APItoken(){
@@ -34,23 +34,17 @@ var Auth = (function(){
         },['auth_tokens','users'],
         {'where':[[['auth_tokens','uid'],'=',uid],'and',[['auth_tokens','token'],'=',token],'and',[['users','id'],'=',uid]]},
         function(err,result){
-            if(err.hasOwnProperty('status')){
+            if(err !== null){
                 return res.json(err);
             }
             else if(result.rowCount > 0){
                 if(new Date() < new Date(result.rows[0].expiration_time)){
-                    /*req.currentUser = {
-                        'id':result.rows[0].id,
-                        'login':result.rows[0].login,
-                        'role':result.rows[0].role
-                    };*/
                     req.currentUser = new User(result.rows[0]);
-                    
                     return next();
                 }
                 else{
                     db.delete('auth_tokens',[[['auth_tokens','uid'],'=',uid],'and',[['auth_tokens','token'],'=',token]],function(err,result){
-                        if(err.hasOwnProperty('status') === false)
+                        if(err !== null === false)
                             return res.json({'status':401,'desc':'Your token using period expired. Please relogin.'});
                     });
                 }
@@ -63,12 +57,12 @@ var Auth = (function(){
     public.signIn = function(req,res,next){
         var user = new User();
         user.verifyUser(req.body.login,req.body.passwd, function(err,result){
-            if(err.hasOwnProperty('status')){
+            if(err !== null){
                 res.json(err);
             }
             else{
                 createToken(result.id, function(err, tokenData){
-                    if(err.hasOwnProperty('status'))
+                    if(err !== null)
                         res.json(err);
                     else{
                         res.cookie('uid', tokenData.uid, { expires: new Date(tokenData.expiration_time)});
@@ -82,7 +76,7 @@ var Auth = (function(){
     };
     public.closeSessions = function(uid,currToken){
         db.delete('auth_tokens',[[['auth_tokens','uid'],'=',uid],'and',[['auth_tokens','token'],'!=',currToken]],function(err,result){
-            if(err.hasOwnProperty('status') === false)
+            if(err !== null === false)
                 return res.json({'status':200,'desc':'All sessions where destroyed!'});
         });
     };
