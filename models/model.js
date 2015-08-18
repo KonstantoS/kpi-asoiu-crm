@@ -6,10 +6,9 @@ var encryption = require('sha256');
  */
 var Model = function(data){
     for(var field in data){
-        if(db.schema[this._schema].hasOwnProperty(field)){
-            this.set(field,data[field]);
-        }
-    }   
+        if(db.schema[this._schema].hasOwnProperty(field))
+            this.set(field,data[field])
+    }
 };
 
 Model.prototype = {
@@ -271,6 +270,5 @@ Model.prototype = {
         this.getInfo({'id':parseInt(uid)},callback);
     }
 };
-
 
 module.exports = Model;

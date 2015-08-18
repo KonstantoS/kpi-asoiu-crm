@@ -1,2 +1,4 @@
 node_modules/
-
+models/userOld.js
+npm-debug.log
+database_struct.png

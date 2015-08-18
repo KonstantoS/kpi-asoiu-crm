@@ -25,6 +25,7 @@ var schemas = {
         'creation_time':{'type':'timestamp','size':26}
     },
     'auth_tokens':{
+        'id':{'type':'int','primary':true},
         'uid':{'type':'int'},
         'token':{'type':'string','size':64},
         'creation_time':{'type':'timestamp','size':26},
@@ -53,6 +54,29 @@ var schemas = {
     'events_documents':{
         'event_id':{'type':'int','primary':true},
         'document_id':{'type':'int','primary':true}
+    },
+    'news':{
+        'id':{'type':'int','primary':true},
+        'title':{'type':'string','size':100},
+        'content':{'type':'string'},
+        'tags':{'type':'string','size':255},
+        'author_id':{'type':'int', 'primary':true},
+        'access':{'type':'int'},
+        'creation_time':{'type':'timestamp','size':26},
+        'preview_url':{'type':'string','size':255}
+    },
+    'documents':{
+        'id':{'type':'int','primary':true},
+        'parent_id':{'type':'int', 'primary':true},
+        'doctype':{'type':'string','size':50},
+        'original_name':{'type':'string','size':255},
+        'title':{'type':'string','size':100},
+        'desc':{'type':'string','size':255},
+        'owner_id':{'type':'int', 'primary':true},
+        'access':{'type':'int'},
+        'update_time':{'type':'timestamp','size':26},
+        'tags':{'type':'string','size':255},
+        'hash':{'type':'string','size':40},
     }
 };
 module.exports = schemas;

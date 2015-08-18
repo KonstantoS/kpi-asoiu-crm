@@ -4,15 +4,31 @@ var schemas = require('../libs/schemas');
 var DB = (function(){
     var conString = process.env.DATABASE_URL || 'postgres://'+config.get('db:user')+':'+config.get('db:pass')+'@'+config.get('db:host')+'/'+config.get('db:name');
     
-    function sqlEscape(stringToEscape){
-        return stringToEscape
-            .replace("\\", "\\\\")
-            .replace("\'", "\\\'")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\\n")
-            .replace("\r", "\\\r")
-            .replace("\x00", "\\\x00")
-            .replace("\x1a", "\\\x1a");
+    function sqlEscape(str){
+        return str.replace(/[\0\x08\x09\x1a\n\r"'\\\%]/g, function (char) {
+            switch (char) {
+                case '\\0':
+                    return '\\\\0';
+                case '\\x08':
+                    return '\\\\b';
+                case '\\x09':
+                    return '\\\\t';
+                case '\\x1a':
+                    return '\\\\z';
+                case '\\n':
+                    return '\\\\n';
+                case '\\r':
+                    return '\\\\r';
+                case "'":
+                    return "''";
+                case '"':
+                    return '""';
+                case '\\':
+                case '\\\\':
+                case '%':
+                    return '\\'+char;
+            }
+        });
     }
     function sendQuery(queryString, callback){
         console.log('\x1b[33m%s\x1b[0m: ', queryString);
@@ -132,7 +148,7 @@ var DB = (function(){
     public.select = function(fields, from, params, callback){
         var Selection = 'SELECT ';
         var flds = [];
-        if(fields === '*' || fields === 'all'){
+        if(fields === '*' || fields === 'all' || fields === undefined){
             Selection += '*';
         }
         else

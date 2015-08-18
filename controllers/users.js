@@ -54,7 +54,7 @@ router.get('/:id', access.UserCanIn('users','browse'), function(req,res){
 router.put('/:id', access.UserCanIn('users','browse'), function(req,res){
     var isCurrent = (req.currentUser.id === parseInt(req.params.id));
     if(false === isCurrent && false === req.currentUser.canIn('users','modifyAll'))
-        return res.json({'status':403,'desc':'Access denieded! You can\'t modify user'});
+        return res.json({'status':403,'desc':'Access denied! You can\'t modify user'});
     
     if(req.body.hasOwnProperty('role'))
         if((isCurrent && (req.body.role < access.permissions.users.changeRole)) || (!isCurrent && false === req.currentUser.canIn('users','changeRole')))

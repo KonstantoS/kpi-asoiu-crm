@@ -23,7 +23,7 @@ var Auth = (function(){
     }
     public.checkAuth = function(req,res,next){
         if(req.headers.hasOwnProperty('authorization') === false)
-            return res.json({'status':403,'desc':'Access denided!'});
+            return res.json({'status':403,'desc':'Access denied!'});
         
         var params = req.headers.authorization.split(':');
         var uid = params[0];

@@ -8,7 +8,7 @@ var RoleManager = (function(){
         'admin':parseInt('1000',2) //int::4
     };
     public.permissions = perm;
-    public.UserCanIn = function(moduleName,action){
+    public.UserCanIn = function(moduleName, action){
         return function(req,res,next){
             if(perm[moduleName][action] & req.currentUser.role)
                 next();
@@ -16,7 +16,7 @@ var RoleManager = (function(){
                 res.json({'status':403,'desc':'You have no access to this module or action'});
         };
     };
-    public.isCurrentUser = function(req,res,next){
+    public.isCurrentUser = function(req, res, next){
         if(req.currentUser.id === parseInt(req.params.id))
             next();
         else

@@ -6,16 +6,16 @@ var perm = require('../libs/permissions');
 /*
  * See DB schema at: libs/schemas.js
  */
-var Event = function(data){
-    this._object = 'Event';
-    this._schema = 'events';
+var Post = function(data){
+    this._object = 'Post';
+    this._schema = 'news';
     Model.apply(this,arguments);
 };
-Event.prototype = Object.create(Model.prototype);
-Event.prototype.constructor = Event;
+Post.prototype = Object.create(Model.prototype);
+Post.prototype.constructor = Post;
 
-Event.prototype._import_({
-    
+Post.prototype._import_({
+
 });
 
-module.exports = Event;
+module.exports = Post;

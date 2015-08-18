@@ -3,6 +3,7 @@ var router = express.Router();
 var Event = require('../models/event');
 var access = require('../libs/rolemanager');
 
+
 /* GET all events list */
 router.get('/', access.UserCanIn('events','browse'), function(req, res, next) {
     var events = new Event();
@@ -24,13 +25,50 @@ router.get('/', access.UserCanIn('events','browse'), function(req, res, next) {
     }
     if(req.query.hasOwnProperty('search'))
         eventParams = req.query.search;
-
-    //////////////////////////////////////////////////////////////////////////
-    //console.log(req.currentUser);
     
     events.find(eventParams, returnParams, function(err,result){
         return res.json(result || err);
     });
 });
+router.post('/', access.UserCanIn('events','create'), function(req,res){
+    var event = new Event();
+    var fillTry = event.fill(req.body);
+    if(true === fillTry){
+        event.save(function(err,result){
+            return res.json(result || err);
+        });
+    }
+    else
+        res.json(fillTry);
+});
+router.get('/:id', access.UserCanIn('events','browse'), function(req,res){
+    var event = new Event();
+    event.byId(req.params.id,function(err,event){
+        return res.json(event || err);
+    });
+});
 
+
+
+router.put('/:id', access.UserCanIn('events','create'), function(req,res){
+    var event = new Event({'id':parseInt(req.params.id)});
+
+    if(false === req.currentUser.isOwner(event) && false === req.currentUser.canIn('events','modifyAll'))
+        return res.json({'status':403,'desc':'Access denied! You can\'t modify event.'});
+
+    var fillTry = event.fill(req.body);
+    if(true === fillTry){
+        event.save(function(err,result){
+            return res.json(result || err);
+        });
+    }
+    else
+        res.json(fillTry);
+});
+router.delete('/:id', access.UserCanIn('events','modifyAll'), function(req,res){
+    var event = new Event({'id':parseInt(req.params.id)});
+    event.remove(function(err,result){
+        return res.json(result || err);
+    });
+});
 module.exports = router;

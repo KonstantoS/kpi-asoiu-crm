@@ -29,7 +29,7 @@ var permissions = {
         'modifyAll':ADMIN_ACCESS
     },
     'documents':{
-        'browsee':STUDENT_ACCESS,
+        'browse':STUDENT_ACCESS,
         'create':STUDENT_ACCESS
     }
 };

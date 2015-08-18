@@ -52,6 +52,8 @@ User.prototype._import_({
      * @return bool  
      */
     isOwner: function(object){
+        if(!isNaN(parseInt(object)))
+            return this.id === object;
         if(this.id === object.owner_id || this.id === object.author_id)
             return true;
         else if(this.login === object.login )
