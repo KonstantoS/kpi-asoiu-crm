@@ -16,8 +16,22 @@ Document.prototype = Object.create(Model.prototype);
 Document.prototype.constructor = Document;
 
 Document.prototype._import_({
-    uniqueInFolder: function(callback){
+    alreadyExists: function(callback){
+        var self = this;
 
+        db.select('all',[this._schema],{
+            'where':[
+                [[self._schema,'parent_id'],'=',self['parent_id']],[[self._schema,'original_name'],'=',self['original_name']]
+            ]
+        },function(err,result){
+            if((typeof result === 'object' && result.rowCount===0) || (err !== null && err.status === 404))
+                callback(null);
+            else if(typeof result === 'object'){
+                return callback({'status':400,'desc':'Document already exists in folder'});
+            }
+            else
+                return callback(err);
+        });
     }
 });
 

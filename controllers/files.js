@@ -10,9 +10,12 @@ var access = require('../libs/rolemanager');
 router.get('/', access.UserCanIn('documents','browse'), function(req, res, next) {
     var docs = new Document();
     var returnParams = {
-
+        'fields':['id','parent_id','original_name','doctype','title','desc','owner_id','tags','update_time']
     };
-    var docParams = 'all';
+    var docParams = {
+        'parent_id':'NULL',
+        'owner_id':req.currentUser.id
+    };
     
     //?order[by]=&order[direction]=&limit=&offset=
     if(req.query.hasOwnProperty('limit') || req.query.hasOwnProperty('offset')){
@@ -33,7 +36,10 @@ router.get('/', access.UserCanIn('documents','browse'), function(req, res, next)
     });
 });
 router.post('/', access.UserCanIn('documents','create'), function(req,res){
-    var doc = new Document({'owner_id':req.currentUser.id});
+    var doc = new Document({
+        'owner_id':req.currentUser.id,
+        'parent_id':'NULL'
+    });
     var form = new formidable.IncomingForm();
 
     form.hash = 'sha1';
@@ -44,16 +50,17 @@ router.post('/', access.UserCanIn('documents','create'), function(req,res){
     });
     form.on('error', function(err) {
         console.log('ERROR!');
-        return res.json(err);
+        return !res.headersSent ? res.end() : '';
     });
     form.on('aborted', function() {
         console.log('ABORTED!');
-        return res.json({'err':'aborted'});
+        return !res.headersSent ? res.end() : '';
     });
     form.parse(req, function(err, fields, files) {
         console.log(fields);
         console.log(files);
-        files.upload.forEach(function(file){
+        if(files.upload !== undefined)
+            files.upload.forEach(function(file){
             console.log(file);
             var upload_path = file.path,
                 file_size = file.size,
@@ -100,6 +107,7 @@ router.post('/', access.UserCanIn('documents','create'), function(req,res){
                         'original_name':file_name
                     });
                     doc.fill(fields);
+
                     //if(true === fillTry){
                     doc.save(function(err,result){
                         // return res.json(result || err);
@@ -107,21 +115,27 @@ router.post('/', access.UserCanIn('documents','create'), function(req,res){
                 });
             }
         });
-        return res.json({'status':200,'desc':'Files where uploaded.'});
+        return !res.headersSent ? res.json({'status':200,'desc':'Files where uploaded.'}) : '';
     });
 });
+router.post('/:id', access.UserCanIn('documents','browse'), function(req, res){
+
+});
+
 
 router.get('/:id', access.UserCanIn('documents','browse'), function(req,res){
     var doc = new Document();
     doc.byId(req.params.id,function(err,doc){
-        return res.json(doc || err);
+        return res.json(doc || err); //TODO: res.attachment / res.download
     });
 });
 
 
 
 router.put('/:id', access.UserCanIn('documents','create'), function(req,res){
-    var doc = new Document({'id':parseInt(req.params.id)});
+    var doc = new Document({
+        'id':parseInt(req.params.id)
+    });
 
     if(false === req.currentUser.isOwner(doc) && false === req.currentUser.canIn('docs','modifyAll'))
         return res.json({'status':403,'desc':'Access denied! You can\'t modify doc.'});
