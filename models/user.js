@@ -52,17 +52,17 @@ User.prototype._import_({
      * @return bool  
      */
     isOwner: function(object){
+        console.log(object);
         if(!isNaN(parseInt(object)))
             return this.id === object;
-        if(this.id === object.owner_id || this.id === object.author_id)
-            return true;
-        else if(this.login === object.login )
-            return true;
+        if(object.owner_id !== undefined || object.author_id !== undefined || object.login !== undefined){
+            if(this.id === object.owner_id || this.id === object.author_id)
+                return true;
+            else if(this.login === object.login )
+                return true;
+        }
         else
             return false;
-    },
-    hasAccess: function(object){
-        
     },
     /*
      * Get's list of users' contacts.

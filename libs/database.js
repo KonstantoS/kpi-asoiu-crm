@@ -121,7 +121,7 @@ var DB = (function(){
                     if(false === value.match(DB.schema[table][field]['pattern']))
                         return false;
                 }
-                else if(DB.schema[table][field]['type'] === 'int' && (isNaN(parseInt(value)) || (item[3]!==undefined && isNaN(parseInt(item[3])))))
+                else if(DB.schema[table][field]['type'] === 'int' && (value !== null || value !== 'NULL') && (isNaN(parseInt(value)) || (item[3]!==undefined && isNaN(parseInt(item[3])))))
                     return false;
                 else if(DB.schema[table][field]['type'] === 'string' && (typeof value !== 'string' || value.length > DB.schema[table][field]['size']))
                     return false;
@@ -284,6 +284,7 @@ var DB = (function(){
         var Delete = 'DELETE FROM '+table+wherePart(what)+';';
         return sendQuery(Delete, callback);
     };
+    public.query = sendQuery;
     return public;
 })();
 

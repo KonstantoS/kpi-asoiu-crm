@@ -5,18 +5,16 @@ var encryption = require('sha256');
  * See DB schema at: libs/schemas.js
  */
 var Model = function(data){
-    for(var field in data){
+    for(var field in data)
         if(db.schema[this._schema].hasOwnProperty(field))
             this.set(field,data[field])
-    }
 };
 
 Model.prototype = {
     _import_: function(obj){
         if(typeof obj === 'object' && obj !== undefined)
-            for(var key in obj){
+            for(var key in obj)
                 this[key] = obj[key];
-            }
     },
     _encrypt: function(val){
         return encryption(val+config.get('security:salt'));
@@ -200,8 +198,8 @@ Model.prototype = {
                             whereArr.push([[this._schema,field],'like',objProp[field]]);
                         else
                             whereArr.push([[this._schema,field],'=',objProp[field]]);
+                        i++;
                     }
-                    i++;
                 }
             }
             queryParams.where = whereArr;
@@ -266,8 +264,8 @@ Model.prototype = {
      * @param callback function(err,result)
      * @return to callback - object object
      */
-    byId: function(uid,callback){
-        this.getInfo({'id':parseInt(uid)},callback);
+    byId: function(id,callback){
+        this.getInfo({'id':parseInt(id)},callback);
     }
 };
 
