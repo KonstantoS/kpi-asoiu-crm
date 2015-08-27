@@ -281,7 +281,7 @@ var DB = (function(){
      * @param function callback = function(err,result)
      */
     public.delete = function(table, what, callback){
-        var Delete = 'DELETE FROM '+table+wherePart(what)+';';
+        var Delete = 'DELETE FROM '+table+wherePart(what)+' RETURNING *;';
         return sendQuery(Delete, callback);
     };
     public.query = sendQuery;

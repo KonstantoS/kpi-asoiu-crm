@@ -31,6 +31,10 @@ var permissions = {
     'documents':{
         'browse':STUDENT_ACCESS,
         'create':STUDENT_ACCESS
+    },
+    'groups': {
+        'browse':STUDENT_ACCESS,
+        'create':WORKER_ACCESS
     }
 };
 module.exports = permissions;

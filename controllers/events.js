@@ -25,7 +25,9 @@ router.get('/', access.UserCanIn('events','browse'), function(req, res, next) {
     }
     if(req.query.hasOwnProperty('search'))
         eventParams = req.query.search;
-    
+
+    console.log(req.query.search);
+
     events.find(eventParams, returnParams, function(err,result){
         return res.json(result || err);
     });
@@ -68,7 +70,7 @@ router.put('/:id', access.UserCanIn('events','create'), function(req,res){
 router.delete('/:id', access.UserCanIn('events','modifyAll'), function(req,res){
     var event = new Event({'id':parseInt(req.params.id)});
     event.remove(function(err,result){
-        return res.json(result || err);
+        return res.json(err);
     });
 });
 module.exports = router;

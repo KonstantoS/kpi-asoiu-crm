@@ -1,4 +1,3 @@
-var fse = require('fs-extra');
 var Model = require('./model');
 var db = require('../libs/database');
 var config = require('../libs/config');
@@ -15,7 +14,7 @@ var Document = function(data){
 Document.prototype = Object.create(Model.prototype);
 Document.prototype.constructor = Document;
 
-//TODO: .byPath, .byName (search), .zipSelected methods
+//TODO: .byPath, .zipSelected, .notInUse methods
 
 Document.prototype._import_({
     userAccess: function(user, callback){
@@ -55,7 +54,7 @@ Document.prototype._import_({
         var result='';
         for(var i=0;i<hash.length;i+=2){
             result += hash.substr(i,2);
-            result += (i<hash.length+2) ? '/' : '';
+            result += (i<hash.length-2) ? '/' : '';
         }
         return result;
     },
@@ -68,15 +67,17 @@ Document.prototype._import_({
         },{},callback,true);
     },
     isFolder: function(){
-        return this.doctype === '_DIR_';
+        return this.doctype === '_DIR_' || this.id === 0;
     },
     getContent: function(callback){
         var self = this;
 
         db.select('all',[this._schema],{
-            'where':[
-                [[self._schema,'parent_id'],'=',self['id']]
-            ]
+            'where': (function(){
+                var result = [[[self._schema,'parent_id'],'=',self['id']]];
+                if(self.id === 0) result.push('and',[[self._schema,'owner_id'],'=',self['owner_id']]);
+                return result;
+            })()
         },function(err,result){
             if(err !== null)
                 return callback(err);
@@ -90,6 +91,10 @@ Document.prototype._import_({
             });
             return callback(null,objectsData);
         });
+    },
+    inUse: function(callback){
+        var self = this;
+        this.getInfo({'hash':self.hash},callback);
     }
 });
 

@@ -25,16 +25,13 @@ router.get('/', access.UserCanIn('users','browse'), function(req, res, next) {
     if(req.query.hasOwnProperty('search'))
         userParams = req.query.search;
 
-    //////////////////////////////////////////////////////////////////////////
-    //console.log(req.currentUser);
-    
     users.find(userParams, returnParams, function(err,result){
         return res.json(result || err);
     });
 });
 /* POST request creates new user */
 router.post('/', access.UserCanIn('users','create'), function(req,res){
-    var user = new User(); //Don't use constructor to avoid errors in fields. Otherwise filler is beeing used.
+    var user = new User();
     var fillTry = user.fill(req.body);
     if(true === fillTry){
         user.save(function(err,result){
@@ -127,7 +124,7 @@ router.delete('/:id/contacts', access.isCurrentUser, function(req,res){
         return res.json({'status':400,'desc':'Bad request. Contact ID is empty.'});
     
     req.currentUser.removeContact(req.body.contact_id, function(err,result){
-        return res.json(result || err);
+        return res.json(err);
     });   
 });
 
