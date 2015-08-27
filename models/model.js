@@ -115,7 +115,7 @@ Model.prototype = {
             if(err !== null)
                 return callback(err);
             else if(result.rowCount>0)
-                return callback({'status':200,desc:self._object+' was deleted.'}, result);
+                return callback({'status':200,desc:self._object+' was deleted.'});
             else
                 return callback({'status':400,desc:self._object+' wasn\'t deleted or not found.'});
         });
@@ -192,7 +192,7 @@ Model.prototype = {
                     if(i>0)
                         whereArr.push('and');
                     if(db.schema[this._schema][field].encrypted)
-                        objProp[field] = encrypt(objProp[field]);
+                        objProp[field] = this._encrypt(objProp[field]);
                     if(db.schema.check([[this._schema,field],'match',objProp[field]])){
                         if(db.schema[this._schema][field].type==='string' && !single)
                             whereArr.push([[this._schema,field],'has',objProp[field]]);

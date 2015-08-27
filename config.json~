@@ -6,6 +6,12 @@
         "user": "asoiu", 
         "pass": "kpi-asoiu" 
     },
+    "db1": {
+        "host": "localhost",
+        "name": "acdp_development",
+        "user": "acdp", 
+        "pass": "asoiu" 
+    },
     "security": {
         "salt": "24oNjC2X",
         "auth_salt": "",

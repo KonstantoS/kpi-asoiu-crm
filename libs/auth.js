@@ -30,15 +30,19 @@ var Auth = (function(){
         var token = params[1];
         db.select({
             'users':['id','login','name','role','position','avatar_url'],
-            'auth_tokens':'all'
-        },['auth_tokens','users'],
-        {'where':[[['auth_tokens','uid'],'=',uid],'and',[['auth_tokens','token'],'=',token],'and',[['users','id'],'=',uid]]},
+            'auth_tokens':['token','creation_time','expiration_time']
+        },['users'],
+        {
+            'where':[[['auth_tokens','token'],'=',token],'and',[['users','id'],'=',uid]],
+            'join':{'type':'left','table':'auth_tokens','on':[[['auth_tokens','uid'],'=',['users','id']]]}
+        },
         function(err,result){
             if(err !== null){
                 return res.json(err);
             }
             else if(result.rowCount > 0){
                 if(new Date() < new Date(result.rows[0].expiration_time)){
+                    console.log(result.rows);
                     req.currentUser = new User(result.rows[0]);
                     return next();
                 }
@@ -58,12 +62,12 @@ var Auth = (function(){
         var user = new User();
         user.verifyUser(req.body.login,req.body.passwd, function(err,result){
             if(err !== null){
-                res.json(err);
+                return res.json(err);
             }
             else{
                 createToken(result.id, function(err, tokenData){
                     if(err !== null)
-                        res.json(err);
+                        return res.json(err);
                     else{
                         res.cookie('uid', tokenData.uid, { expires: new Date(tokenData.expiration_time)});
                         res.cookie('_auth', tokenData.token, { expires: new Date(tokenData.expiration_time)});
