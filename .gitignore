@@ -1,6 +1,5 @@
-node_modules/
-models/userOld.js
+#node_modules/
 npm-debug.log
-database_struct.png
-.idea
+#database_struct.png
+#.idea
 uploads
