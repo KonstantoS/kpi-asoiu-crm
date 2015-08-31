@@ -189,6 +189,8 @@ router.post('/:id?', access.UserCanIn('documents','create'), function(req,res,ne
 router.put('/:id', access.UserCanIn('documents','create'), function(req,res){
     var doc = new Document({'id':parseInt(req.params.id)});
 
+    res.json(req.body);
+    /*
     if(false === req.currentUser.isOwner(doc) && false === req.currentUser.canIn('docs','modifyAll'))
         return res.json({'status':403,'desc':'Access denied! You can\'t modify doc.'});
 
@@ -199,7 +201,8 @@ router.put('/:id', access.UserCanIn('documents','create'), function(req,res){
         });
     }
     else
-        res.json(fillTry);
+        res.json(fillTry);*/
+
 });
 
 //TODO: Folder deleting

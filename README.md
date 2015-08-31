@@ -1,6 +1,6 @@
-# KPI Web (ASU Department Department portal)
+# KPI Web (ASU Department portal)
 
-! Required packages: node, postgresql, npm
+**Required packages**: node, postgresql, npm
 
 ## How to install
 ### 0. Do ` cd ` to project directory 
@@ -24,7 +24,7 @@ In project root:
 
     npm install
     
-Then replace **bold**node_modules/formidable**bold** module with patched one from git root 
+Then replace **node_modules/formidable** module with patched one from git root 
 
 ## How to use
 ### Starting server
@@ -37,7 +37,7 @@ or
     npm start
     
 ### Log in
-Send a `POST` **bold**x-www-form-urlencoded request**bold** to `localhost:2000/login` with fields `login:admin, passwd:asukpiua`
+Send a `POST` **x-www-form-urlencoded request** to `localhost:2000/login` with fields `login:admin, passwd:asukpiua`
 You will receive that cookies:
     
     _auth: % your uuid token%
@@ -50,4 +50,4 @@ Example:`Authorization   1:089f1a40-5b60-4098-9446-fe2069a775c3`
 ### Using
 Just as all RESTful APIs:
 
-`GET | POST | PUT | DELETE` ***bold*** /item/:id ***bold*** 
+`GET | POST | PUT | DELETE` **/item/:id** 

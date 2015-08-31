@@ -107,9 +107,6 @@ Document.prototype._import_({
         var self = this;
         this.getInfo({'hash':self.hash},callback);
     },
-    rmRec:function(callback){
-
-    },
     findAll: function(objProp, params, user, callback){
         objProp = (objProp === 'all') ? {} : objProp;
         var self = this;
@@ -184,6 +181,12 @@ Document.prototype._import_({
             });
             return callback(null,objectsData);
         });
+    },
+    rmRec:function(callback){
+
+    },
+    share:function(type, callback){
+
     }
 });
 
