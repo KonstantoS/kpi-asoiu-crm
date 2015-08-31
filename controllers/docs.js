@@ -5,85 +5,41 @@ var fse = require('fs-extra');
 var formidable = require('formidable');
 var access = require('../libs/rolemanager');
 
-//TODO: PUT, file search, shared files browse
-//TODO: SHARING folders inner content
-/*
-* List all shared files:
-*
-* SELECT documents.*, GREATEST( coalesce(group_access.access,0),  coalesce(personal.access, 0), 1) as max_access FROM documents
- LEFT JOIN (SELECT * FROM document_groups INNER JOIN user_groups
-    ON user_groups.group_id=document_groups.group_id
-    WHERE user_groups.user_id = 1) AS group_access ON (documents.id = group_access.doc_id)
- LEFT JOIN (SELECT * FROM document_users WHERE user_id = 1) AS personal
- ON (personal.doc_id = documents.id)
- WHERE ( group_access.access > 0 ) OR (personal.access > 0) OR (documents.access & 8) > 0
-*
-* Search in all files
-*
-* SELECT documents.*, GREATEST( coalesce(group_access.access,0),  coalesce(personal.access, 0), 1) as max_access FROM documents
- LEFT JOIN (SELECT * FROM document_groups INNER JOIN user_groups
- ON user_groups.group_id=document_groups.group_id
- WHERE user_groups.user_id = 1) AS group_access ON (documents.id = group_access.doc_id)
- LEFT JOIN (SELECT * FROM document_users WHERE user_id = 1) AS personal
- ON (personal.doc_id = documents.id)
- WHERE (( group_access.access > 0 ) OR (personal.access > 0) OR ((documents.access & 8) > 0) OR (documents.owner_id = 1)) AND (documents.original_name ILIKE %name%);
-*
-*
-* if (req.query.search)
-*   if(id = 0)
-*       -> GLOBAL SEARCH (doc.findAll)
-*   else
-*       -> LOCAL SEARCH (doc.find with parent)
-* else
-*   LOCAL SEARCH (doc.find with parent and owner)
-*
-* */
-router.get('/:id?', access.UserCanIn('documents','browse'), function(req, res, next) {
-    var doc = new Document({'id': isNaN(parseInt(req.params.id)) ? 0 : parseInt(req.params.id)});
-    doc.userAccess(req.currentUser,function(access){
-        if(access < 1)
-            return res.json({'status':403,'desc':'Access denied!'});
-        else{
-            if(req.query.hasOwnProperty('search')){
-                doc.fill(req.query.search);
-                if(doc.id !== 0){
-                    doc.set('parent_id',doc.id);
-                    delete doc.id;
-                }
-            }
-            if(doc.id === 0){
-                doc.fill({
-                    'parent_id':doc.id,
-                    'owner_id':req.currentUser.id
-                });
-                delete doc.id;
-            }
+router.get('/', access.UserCanIn('documents','browse'), function(req, res, next) {
+    var doc = new Document();
+    var returnParams = {};
 
-            doc.find(doc.data(),{},function(err,result){
+    if(req.query.hasOwnProperty('order')){
+        returnParams.order = {'direction':req.query.order.direction || 'asc','by':[['documents',req.query.order.by || 'name']]};
+    }
+    if(req.query.hasOwnProperty('shared')){
+        returnParams.shared = true;
+    }
+    if(req.query.hasOwnProperty('search')){
+        doc.erase();
+        doc.fill(req.query.search);
+    }
 
-            });
-            /*
-            doc.getInfo(doc.data(),function(err,file){
-                doc.fill(file);
-                if(doc.isFolder()) {
-                    if (doc.id === 0) doc.set('owner_id', req.currentUser.id);
-                    doc.getContent(function (err, content) {
-                        return res.json(content || err);
-                    });
-                }
-                else
-                    res.download('./uploads/'+doc.pathByHash(doc.hash), doc.original_name);
-            });*/
-        }
-    });
+
+    if(req.query.hasOwnProperty('search') || returnParams.shared === true) {
+        doc.findAll(doc.data() || 'all',returnParams,req.currentUser,function(err,result){
+            return res.json(result || err);
+        });
+    }
+    else{
+        doc.find({
+            'parent_id':0,
+            'owner_id':req.currentUser.id
+        },returnParams,function(err,result){
+            return res.json(result || err);
+        });
+    }
 });
 
-/*
-router.get('/:id?', access.UserCanIn('documents','browse'), function(req, res, next) {
+/*router.get('/:id?', access.UserCanIn('documents','browse'), function(req, res, next) {
     var doc = new Document({'id': isNaN(parseInt(req.params.id)) ? 0 : parseInt(req.params.id)});
     doc.userAccess(req.currentUser,function(access){
 
-        //TODO:Add global search, directory searh
         /*if(req.query.hasOwnProperty('search'))
             doc.fill(req.query.search);
 
@@ -102,34 +58,33 @@ router.get('/:id?', access.UserCanIn('documents','browse'), function(req, res, n
                     res.download('./uploads/'+doc.pathByHash(doc.hash), doc.original_name);
             });
     });
-});
-
-router.get('/:id', access.UserCanIn('documents','browse'), function(req,res){
-    var doc = new Document({'id':parseInt(req.params.id)});
-    doc.userAccess(req.currentUser,function(access){
-        if(access < 1)
+});*/
+router.get('/:id', access.UserCanIn('documents','browse'), function(req, res, next) {
+    var doc = new Document({'id': isNaN(parseInt(req.params.id)) ? 0 : parseInt(req.params.id)});
+    doc.userAccess(req.currentUser,function(err, result){
+        console.log(result);
+        if(err !== null)
+            return res.json(err);
+        else if(result.maxAccess < 1)
             return res.json({'status':403,'desc':'Access denied!'});
         else{
-            if(req.query.hasOwnProperty('search'))
-                doc.fill(req.query.search);
+            doc.fill(result);
+            if(doc.isFolder()) {
+                if (doc.id === 0) doc.set('owner_id', req.currentUser.id);
 
-            doc.byId(req.params.id,function(err,file){
-                doc.fill(file);
-                if(doc.isFolder())
-                    doc.getContent(function(err,content){
+                doc.getContent(function (err, content) {
                         return res.json(content || err);
-                    });
-                else
-                    res.download('./uploads/'+doc.pathByHash(doc.hash), doc.original_name);
-            });
+                });
+            }
+            else
+                res.download('./uploads/'+doc.pathByHash(doc.hash), doc.original_name);
         }
     });
-});*/
-
+});
 router.post('/:id?', access.UserCanIn('documents','create'), function(req,res,next){
     var doc = new Document({'id': isNaN(parseInt(req.params.id)) ? 0 : parseInt(req.params.id)});
-    doc.userAccess(req.currentUser,function(access){
-        if(access < 2)
+    doc.userAccess(req.currentUser,function(err, result){
+        if(result.maxAccess < 2)
             return res.json({'status':403,'desc':'You can\'t upload to this directory.'});
 
         var form = new formidable.IncomingForm();
@@ -140,9 +95,9 @@ router.post('/:id?', access.UserCanIn('documents','create'), function(req,res,ne
         form.uploadDir = './uploads/tmp';
 
         //TODO: Upload progress streaming
-        form.on('progress', function(bytesReceived, bytesExpected) {
+        /*form.on('progress', function(bytesReceived, bytesExpected) {
             console.log('Progress so far: '+(100*(bytesReceived/bytesExpected))+"%");
-        });
+        });*/
 
         form.parse(req, function(err, fields, files){
             if(files.upload !== undefined)
@@ -228,13 +183,11 @@ router.post('/:id?', access.UserCanIn('documents','create'), function(req,res,ne
         });
     });
 });
-/*
- * Making of file SHARING on users and groups
- */
+
+//TODO: SHARING
+
 router.put('/:id', access.UserCanIn('documents','create'), function(req,res){
-    var doc = new Document({
-        'id':parseInt(req.params.id)
-    });
+    var doc = new Document({'id':parseInt(req.params.id)});
 
     if(false === req.currentUser.isOwner(doc) && false === req.currentUser.canIn('docs','modifyAll'))
         return res.json({'status':403,'desc':'Access denied! You can\'t modify doc.'});
@@ -249,10 +202,12 @@ router.put('/:id', access.UserCanIn('documents','create'), function(req,res){
         res.json(fillTry);
 });
 
+//TODO: Folder deleting
+
 router.delete('/:id', access.UserCanIn('documents','create'), function(req,res){
     var doc = new Document({'id':parseInt(req.params.id)});
-    doc.userAccess(req.currentUser,function(access){
-        if(access < 2)
+    doc.userAccess(req.currentUser,function(err, result){
+        if(result.maxAccess < 2)
             return res.json({'status':403,'desc':'You can\'t delete this object!'});
         doc.remove(function(err,result){
             if(result !== undefined && result.rowCount > 0){

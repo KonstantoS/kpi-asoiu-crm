@@ -233,8 +233,8 @@ Model.prototype = {
             if(result.rowCount===0)
                 return callback({'status':404,'desc':self._object+' not found.'});
             var objectsData = [];
-            result.rows.forEach(function(usr_data){
-                var object = new self.constructor(usr_data);
+            result.rows.forEach(function(data){
+                var object = new self.constructor(data);
                 objectsData.push(object.data());
             });
             return callback(null,objectsData);

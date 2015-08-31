@@ -77,6 +77,7 @@ var schemas = {
         'update_time':{'type':'timestamp','size':26},
         'tags':{'type':'string','size':255},
         'hash':{'type':'string','size':40},
+        'root_share':{'type':'boolean'}
     }
 };
 module.exports = schemas;

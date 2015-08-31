@@ -20,7 +20,7 @@ router.get('/', access.UserCanIn('users','browse'), function(req, res, next) {
             returnParams.limit.offset = parseInt(req.query.offset);
     }
     if(req.query.hasOwnProperty('order')){
-        returnParams.order = {'direction':req.query.order.direction,'by':[['users',req.query.order.by]]};
+        returnParams.order = {'direction':req.query.order.direction || 'ASC','by':[['users',req.query.order.by || 'name']]};
     }
     if(req.query.hasOwnProperty('search'))
         userParams = req.query.search;
@@ -44,7 +44,9 @@ router.post('/', access.UserCanIn('users','create'), function(req,res){
 
 router.get('/:id', access.UserCanIn('users','browse'), function(req,res){
     var user = new User();
-    user.byId(req.params.id,function(err,user){
+    if(req.params.id === 0)
+        return res.json(req.currentUser.data());
+    user.byId(!isNaN(parseInt(req.params.id)) ? parseInt(req.params.id) : -1 ,function(err,user){
         return res.json(user || err);
     });
 });

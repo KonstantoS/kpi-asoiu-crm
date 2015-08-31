@@ -21,13 +21,11 @@ router.get('/', access.UserCanIn('events','browse'), function(req, res, next) {
             returnParams.limit.offset = parseInt(req.query.offset);
     }
     if(req.query.hasOwnProperty('order')){
-        returnParams.order = {'direction':req.query.order.direction,'by':[['events',req.query.order.by]]};
+        returnParams.order = {'direction':req.query.order.direction || 'ASC','by':[['events',req.query.order.by || 'date']]};
     }
     if(req.query.hasOwnProperty('search'))
         eventParams = req.query.search;
-
-    console.log(req.query.search);
-
+    
     events.find(eventParams, returnParams, function(err,result){
         return res.json(result || err);
     });

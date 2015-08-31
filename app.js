@@ -8,7 +8,7 @@ var app = express();
 var authModule = require('./libs/auth');
 var users = require('./controllers/users');
 var events = require('./controllers/events');
-var docs = require('./controllers/files');
+var docs = require('./controllers/docs');
 
 app.use(logger('dev'));
 app.set('env','development');

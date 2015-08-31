@@ -29,7 +29,7 @@ var Auth = (function(){
         var uid = params[0];
         var token = params[1];
         db.select({
-            'users':['id','login','name','role','position','avatar_url'],
+            'users':'all',
             'auth_tokens':['token','creation_time','expiration_time']
         },['users'],
         {
@@ -42,7 +42,6 @@ var Auth = (function(){
             }
             else if(result.rowCount > 0){
                 if(new Date() < new Date(result.rows[0].expiration_time)){
-                    console.log(result.rows);
                     req.currentUser = new User(result.rows[0]);
                     return next();
                 }
