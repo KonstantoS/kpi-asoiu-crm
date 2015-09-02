@@ -9,6 +9,7 @@ var authModule = require('./libs/auth');
 var users = require('./controllers/users');
 var events = require('./controllers/events');
 var docs = require('./controllers/docs');
+var news = require('./controllers/news');
 
 app.use(logger('dev'));
 app.set('env','development');
@@ -20,6 +21,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/login',authModule.signIn);
 app.use(authModule.checkAuth);
 app.use('/users', users);
+app.use('/news', news);
 app.use('/events', events);
 app.use('/docs', docs);
 
