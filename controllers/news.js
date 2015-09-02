@@ -3,59 +3,65 @@ var router = express.Router();
 var Post = require('../models/post');
 var access = require('../libs/rolemanager');
 
-/* GET all users list */
 router.get('/', access.UserCanIn('news','browse'), function(req, res, next) {
+    
     var Feed = new Post();
-    var returnParams = {
-        'fields':['id','title','content','tags','author_id','access','creation_time','preview_url']
-    };
-    var newsParams = 'all';
+        
     
-    returnParams.limit = {};
-    returnParams.limit.limit = 5;
-    returnParams.order = {'direction':'desc','by':[['news','creation_time']]};
-    
-    if(req.query.hasOwnProperty('limit')){
-        returnParams.limit.limit = parseInt(req.query.limit);
+    if(req.query.hasOwnProperty('tags')){
+        var newsParams = {'tags':req.query.tags},
+            returnParams = {
+                'fields':['id','title','content','tags','author_id','access','creation_time','preview_url']
+            };
+        returnParams.limit = {};
+        returnParams.limit.limit = 5;
+        returnParams.order = {'direction':'desc','by':[['news','creation_time']]};
+        
+        if(req.query.hasOwnProperty('limit')){
+            returnParams.limit.limit = parseInt(req.query.limit);
+        }
+        if(req.query.hasOwnProperty('offset')){
+            returnParams.limit.offset = parseInt(req.query.offset); 
+        }   
+        if(req.query.hasOwnProperty('order')){
+            returnParams.order = {'direction':req.query.order.direction,'by':[['news',req.query.order.by]]};
+        }
+            
+        Feed.find(newsParams, returnParams, function(err,result){
+            return res.json(result || err);
+        });
     }
-    if(req.query.hasOwnProperty('offset')){
-        returnParams.limit.offset = parseInt(req.query.offset); 
-    }   
-    if(req.query.hasOwnProperty('order')){
-        returnParams.order = {'direction':req.query.order.direction,'by':[['news',req.query.order.by]]};
+    else{    
+        
+        var newsParams = 'all',
+            returnParams = {
+                'fields':['id','title','content','tags','author_id','access','creation_time','preview_url']
+            };
+        
+        returnParams.limit = {};
+        returnParams.limit.limit = 5;
+        returnParams.order = {'direction':'desc','by':[['news','creation_time']]};
+        
+        if(req.query.hasOwnProperty('limit')){
+            returnParams.limit.limit = parseInt(req.query.limit);
+        }
+        if(req.query.hasOwnProperty('offset')){
+            returnParams.limit.offset = parseInt(req.query.offset); 
+        }   
+        if(req.query.hasOwnProperty('order')){
+            returnParams.order = {'direction':req.query.order.direction,'by':[['news',req.query.order.by]]};
+        }
+        
+        
+        Feed.find(newsParams, returnParams, function(err,result){
+            return res.json(result || err);
+        });
     }
-    
-    
-    Feed.find(newsParams, returnParams, function(err,result){
-        return res.json(result || err);
-    });
 });
 
-router.get('/tags/:id', access.UserCanIn('news','browse'), function(req, res, next) {
-    var Feed = new Post();
-    var returnParams = {
-        'fields':['id','title','content','tags','author_id','access','creation_time','preview_url']
-    };
-    var newsParams = {'tags':req.params.id} ;
-    //return res.json(newsParams);
-    returnParams.limit = {};
-    returnParams.limit.limit = 5;
-    returnParams.order = {'direction':'desc','by':[['news','creation_time']]};
+function processRequest(req, res, next) {
     
-    if(req.query.hasOwnProperty('limit')){
-        returnParams.limit.limit = parseInt(req.query.limit);
-    }
-    if(req.query.hasOwnProperty('offset')){
-        returnParams.limit.offset = parseInt(req.query.offset); 
-    }   
-    if(req.query.hasOwnProperty('order')){
-        returnParams.order = {'direction':req.query.order.direction,'by':[['news',req.query.order.by]]};
-    }
-        
-    Feed.find(newsParams, returnParams, function(err,result){
-        return res.json(result || err);
-    });
-});
+}
 
 router.post('/', access.UserCanIn('news','create'), function(req,res){
     var thread = new Post();
