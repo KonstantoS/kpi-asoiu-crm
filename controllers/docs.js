@@ -186,6 +186,7 @@ router.post('/:id?', access.UserCanIn('documents','create'), function(req,res,ne
 
 //TODO: SHARING
 
+
 router.put('/:id', access.UserCanIn('documents','create'), function(req,res){
     var doc = new Document({'id':parseInt(req.params.id)});
 
