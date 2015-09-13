@@ -57,6 +57,18 @@ var Auth = (function(){
             }
         });
     };
+    
+    public.register = function(req,res,next){
+        var user = new User();
+        var fillTry = user.fill(req.body);
+        if(true === fillTry){
+            user.save(function(err,result){
+                return res.json(result || err);
+            });
+        }
+        else
+            res.json(fillTry);
+    }
     public.signIn = function(req,res,next){
         var user = new User();
         user.verifyUser(req.body.login,req.body.passwd, function(err,result){

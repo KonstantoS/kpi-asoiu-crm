@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var User = require('../models/user');
 var access = require('../libs/rolemanager');
+var translit = require('../libs/translit');
 
 /* GET all users list */
 router.get('/', access.UserCanIn('users','browse'), function(req, res, next) {
@@ -41,6 +42,42 @@ router.post('/', access.UserCanIn('users','create'), function(req,res){
     else
         res.json(fillTry);
 });
+
+router.get('/generate', access.UserCanIn('users','create'), function(req,res){
+    function rand(max) {
+        return Math.floor(Math.random() * (max + 1));
+    }
+    function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+    var fs = require('fs');
+    var firstNames = fs.readFileSync('generationData/names.txt').toString().split("\n");
+    var secondNames = fs.readFileSync('generationData/secNames.txt').toString().split("\n");
+    var count = 1000;
+    var pass = 'asukpiua';
+    for (var i = 0; i < count; i++) { 
+        var name = firstNames[rand(firstNames.length)],
+            surname = secondNames[rand(secondNames.length)];
+            var fio = capitalizeFirstLetter(name).replace(/(\r\n|\n|\r)/gm," ")+' '+ capitalizeFirstLetter(surname).replace(/(\r\n|\n|\r)/gm," ");
+            var login = translit(name.replace(/(\r\n|\n|\r)/gm,"")+'.'+surname.replace(/(\r\n|\n|\r)/gm,""),5).replace('`','').toLowerCase().replace(' ','');
+            var request = {
+                "name": fio, 
+                "email": login + '@kpi.ua',
+                "login": login,
+                "password": pass,
+                "role" : 1   
+            } 
+            var user = new User();
+            var fillTry = user.fill(request);
+            if(true === fillTry){
+                user.save(function(err,result){
+                    //return res.json(result || err);
+                });
+            }  
+    }
+    res.json({'status':200,'desc':count + ' users was created'});
+});
+
 
 router.get('/:id', access.UserCanIn('users','browse'), function(req,res){
     var user = new User();
