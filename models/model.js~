@@ -77,14 +77,14 @@ Model.prototype = {
         this.isUnique(function(err){
             if(err === null){
                 if(true === isNaN(parseInt(self.id)))
-                    db.insert(self._schema,self.data({'encrypted':true}),function(err, result){
+                    db.insert(self._schema,self,function(err, result){
                         if(err !== null)
                             return callback(err);
                         else
                             return callback({'status':200,'desc':self._object+' was created.'});
                     });         
                 else
-                    db.update(self._schema,self.data({'encrypted':true}),[[[self._schema,'id'],'=',self.id]],function(err,result){
+                    db.update(self._schema,self,[[[self._schema,'id'],'=',self.id]],function(err,result){
                         if(err !== null)
                             return callback(err);
                         else if(result.rowCount > 0)

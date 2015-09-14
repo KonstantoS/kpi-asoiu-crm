@@ -70,7 +70,8 @@ ALTER TABLE contacts OWNER TO asoiu;
 CREATE TABLE document_groups (
     doc_id integer NOT NULL,
     group_id integer NOT NULL,
-    access smallint DEFAULT 1
+    access smallint DEFAULT 1,
+    root_share boolean DEFAULT false
 );
 
 
@@ -90,7 +91,8 @@ COMMENT ON COLUMN document_groups.access IS '001:read, 010: write, 100: modify';
 CREATE TABLE document_users (
     doc_id integer NOT NULL,
     user_id integer NOT NULL,
-    access smallint DEFAULT 1
+    access smallint DEFAULT 1,
+    root_share boolean DEFAULT false
 );
 
 
@@ -132,7 +134,8 @@ CREATE TABLE documents (
     access smallint DEFAULT 0,
     tags character varying(255),
     hash character varying(40),
-    update_time timestamp without time zone DEFAULT now()
+    update_time timestamp without time zone DEFAULT now(),
+    root_share boolean DEFAULT false
 );
 
 
@@ -319,19 +322,6 @@ CREATE TABLE users (
 
 
 ALTER TABLE users OWNER TO asoiu;
-
---
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: asoiu
---
-
-INSERT INTO users VALUES (1, 'admin', '068451a8cd130bab029837e87107801006c65c4b2c76a69e0373cbba7891f874', 'Username Usernameovich', 'is0001@asu.kpi.ua', 8, '', '', '', '2015-06-27 01:25:58.46347');
-
---
--- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: asoiu
---
-
-SELECT pg_catalog.setval('users_id_seq', 1, true);
-
 
 --
 -- Name: auth_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: asoiu; Tablespace: 

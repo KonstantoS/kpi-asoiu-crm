@@ -70,7 +70,8 @@ ALTER TABLE contacts OWNER TO asoiu;
 CREATE TABLE document_groups (
     doc_id integer NOT NULL,
     group_id integer NOT NULL,
-    access smallint DEFAULT 1
+    access smallint DEFAULT 1,
+    root_share boolean DEFAULT false
 );
 
 
@@ -90,7 +91,8 @@ COMMENT ON COLUMN document_groups.access IS '001:read, 010: write, 100: modify';
 CREATE TABLE document_users (
     doc_id integer NOT NULL,
     user_id integer NOT NULL,
-    access smallint DEFAULT 1
+    access smallint DEFAULT 1,
+    root_share boolean DEFAULT false
 );
 
 
@@ -132,7 +134,8 @@ CREATE TABLE documents (
     access smallint DEFAULT 0,
     tags character varying(255),
     hash character varying(40),
-    update_time timestamp without time zone DEFAULT now()
+    update_time timestamp without time zone DEFAULT now(),
+    root_share boolean DEFAULT false
 );
 
 

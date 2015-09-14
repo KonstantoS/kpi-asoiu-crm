@@ -188,38 +188,10 @@ Document.prototype._import_({
     },
     /*
 
-     WITH RECURSIVE child_nodes AS (
-     SELECT documents.*, CAST ('/' || documents.original_name AS VARCHAR (100)) as path
-     FROM documents WHERE documents.parent_id = 0
-     UNION
-     SELECT documents.*, CAST ( child_nodes.path ||'/'|| documents.original_name AS VARCHAR(100))
-     FROM documents INNER JOIN child_nodes ON( child_nodes.id = documents.parent_id))
-     SELECT * FROM child_nodes;
 
-     WITH RECURSIVE child_nodes AS (
-     SELECT documents.*, CAST ('/' || documents.original_name AS VARCHAR (100)) as path
-     FROM documents WHERE documents.parent_id = 5
-     UNION
-     SELECT documents.*, CAST ( child_nodes.path ||'/'|| documents.original_name AS VARCHAR(100))
-     FROM documents INNER JOIN child_nodes ON( child_nodes.id = documents.parent_id))
-     SELECT * FROM child_nodes UNION
-     SELECT documents.*, CAST ('./' AS VARCHAR (100)) as path FROM documents WHERE id = 5 ORDER BY path;
 
 
      /////////INSERT
-
-     WITH RECURSIVE child_nodes AS (
-     SELECT documents.*, CAST ('/' || documents.original_name AS VARCHAR (100)) as path
-     FROM documents WHERE documents.parent_id = 5
-     UNION
-     SELECT documents.*, CAST ( child_nodes.path ||'/'|| documents.original_name AS VARCHAR(100))
-     FROM documents INNER JOIN child_nodes ON( child_nodes.id = documents.parent_id)
-     )
-     INSERT INTO document_users
-
-     SELECT id AS doc_id, 1 AS user_id, 1 AS access, false AS root_share FROM child_nodes
-     UNION
-     SELECT id AS doc_id, 4 AS user_id, 1 AS access, false AS root_share FROM child_nodes;
 
 
      *
@@ -228,18 +200,56 @@ Document.prototype._import_({
 
     /*
      *  Document sharing method. If document is directory uses complicated CTE expressions.
-     *  @param shareParams | {'access':7, 'users':[1,2,3..],'groups':[1,2,3..], roles:6}
+     *  @param shareParams | {'access':7, 'users':[1,2,3..],'groups':[1,2,3..], 'roles':6}
      *
      */
     share:function(shareParams, callback){
-        var personalDirShare = 'WITH RECURSIVE child_nodes AS ( \
-        SELECT documents.id \
-        FROM documents WHERE documents.parent_id = 5 \
-        UNION \
-        SELECT documents.id FROM documents \
-        INNER JOIN child_nodes ON (child_nodes.id = documents.parent_id) \
-        )\
-        INSERT INTO document_users';
+        var self = this;
+        if(self.isFolder()){
+            var Query = [];
+            Query.push('WITH RECURSIVE child_nodes AS ( \
+            SELECT documents.id AS doc_id \
+                FROM documents WHERE documents.parent_id = '+ self.id +' \
+            UNION \
+            SELECT documents.id AS doc_id FROM documents \
+                INNER JOIN child_nodes ON (child_nodes.id = documents.parent_id) \
+            )');
+            var userQuery = (shareParams.hasOwnProperty('users')) ? 'dusers AS ( \
+            INSERT INTO document_users '+ (function(){
+                    var result = [];
+                    shareParams.users.forEach(function(uid){result.push('SELECT doc_id, '+uid+' AS user_id, '+shareParams.access+' AS access, false AS root_share FROM child_nodes')});
+                    return result.join(' UNION ');
+                })() +' RETURNING * )': '';
+
+            var groupQuery = function(table){ return (shareParams.hasOwnProperty('groups')) ?
+            'dgroups AS ( \
+                INSERT INTO document_groups '+(function(){
+                var result = [];
+                shareParams.groups.forEach(function(gid){result.push('SELECT DISTINCT doc_id, '+gid+' AS group_id, '+shareParams.access+' AS access, false AS root_share FROM '+table)});
+                return result.join(' UNION ');
+            })()+' RETURNING * )' : '';};
+
+            if(shareParams.hasOwnProperty('users')){
+                Query.push(userQuery);
+            }
+            if(shareParams.hasOwnProperty('groups')){
+                Query.push(groupQuery(Query.length > 1? 'dusers' : 'child_nodes'));
+                var tblSelect = 'dgroups';
+            }
+            if(shareParams.hasOwnProperty('roles')){
+                Query = Query.join(', ')+' UPDATE documents SET access = '+shareParams.roles+' WHERE id IN (SELECT DISTINCT doc_id FROM ' + (tblSelect ? 'dgroups' : (Query.length>1) ? 'dusers' :'child_nodes') + ');'
+            }
+            else{
+                Query = Query.join(', ')+' SELECT DISTINCT doc_id FROM ' +  (tblSelect ? 'dgroups' : (Query.length>1) ? 'dusers' :'child_nodes');
+            }
+        }
+        var parentQuery = '';
+
+        db.query(parentQuery,function(err,result){
+            if(err === null && Query !== undefined){
+                db.query('')
+            }
+        });
     }
 });
 
