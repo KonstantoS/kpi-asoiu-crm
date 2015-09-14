@@ -16,13 +16,13 @@ var schemas = {
         'id':{'type':'int','primary':true,'sequence':true},
         'login':{'type':'string','size':32,'pattern':/^[a-zA-Z][a-zA-Z0-9-_\.]{2,32}$/,'required':true,'unique':true},		
         'passwd':{'type':'string','size':64,'encrypted':true, 'required':true},			
-        'name':{'type':'string','size':100, 'pattern':/^[A-Za-zА-Яа-я\s]{,100}$/},		
+        'name':{'type':'string','size':100, 'pattern':/^[A-Za-zА-Яа-я\s]{3,100}$/},		
         'email':{'type':'string','size':255, 'pattern':/^[-\w.]+@({A-z0-9][-A-z0-9]+\.)+[A-z]{2,15}$/,'unique':true,'required':true},				
         'role':{'type':'int','required':true},			
         'position':{'type':'string','size':100},			
         'avatar_url':{'type':'string','size':200},			
         'about':{'type':'string','size':255},			
-        'creation_time':{'type':'timestamp','size':26}
+        'creation_time':{'type':'timestamp','size':26},
     },
     'auth_tokens':{
         'id':{'type':'int','primary':true},
