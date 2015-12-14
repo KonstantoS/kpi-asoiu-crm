@@ -67,7 +67,7 @@ var Auth = (function(){
         }
         else
             res.json(fillTry);
-    }
+    };
     public.signIn = function(req,res,next){
         var user = new User();
         user.verifyUser(req.body.login,req.body.passwd, function(err,result){

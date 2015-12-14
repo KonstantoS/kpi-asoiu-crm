@@ -184,20 +184,19 @@ Document.prototype._import_({
     },
     //For directories
     removeRec:function(callback){
-
+        var hashesToRM = [],
+            self = this;
+        if(self.isFolder()){
+            var Query = 'WITH RECURSIVE child_nodes AS ( \
+            SELECT documents.id AS doc_id \
+                FROM documents WHERE documents.parent_id = '+ self.id +' \
+            UNION \
+            SELECT documents.id AS doc_id FROM documents \
+                INNER JOIN child_nodes ON (child_nodes.id = documents.parent_id) \
+            ) \
+            SELECT DISTINCT doc_id FROM ' +  (tblSelect ? 'dgroups' : (Query.length>1) ? 'dusers' :'child_nodes');
+        }
     },
-    /*
-
-
-
-
-     /////////INSERT
-
-
-     *
-     */
-
-
     /*
      *  Document sharing method. If document is directory uses complicated CTE expressions.
      *  @param shareParams | {'access':7, 'users':[1,2,3..],'groups':[1,2,3..], 'roles':6}

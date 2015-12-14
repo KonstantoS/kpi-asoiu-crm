@@ -53,7 +53,7 @@ router.get('/generate', access.UserCanIn('users','create'), function(req,res){
     var fs = require('fs');
     var firstNames = fs.readFileSync('generationData/names.txt').toString().split("\n");
     var secondNames = fs.readFileSync('generationData/secNames.txt').toString().split("\n");
-    var count = 1000;
+    var count = req.query.count || 200;
     var pass = 'asukpiua';
     for (var i = 0; i < count; i++) { 
         var name = firstNames[rand(firstNames.length)],
@@ -64,9 +64,9 @@ router.get('/generate', access.UserCanIn('users','create'), function(req,res){
                 "name": fio, 
                 "email": login + '@kpi.ua',
                 "login": login,
-                "password": pass,
+                "passwd": pass,
                 "role" : 1   
-            } 
+            };
             var user = new User();
             var fillTry = user.fill(request);
             if(true === fillTry){
@@ -75,7 +75,7 @@ router.get('/generate', access.UserCanIn('users','create'), function(req,res){
                 });
             }  
     }
-    res.json({'status':200,'desc':count + ' users was created'});
+    res.json({'status':200,'desc':count + ' users were created'});
 });
 
 

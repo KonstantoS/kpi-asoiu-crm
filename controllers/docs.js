@@ -122,7 +122,6 @@ router.post('/:id?', access.UserCanIn('documents','create'), function(req,res,ne
                                 }
                                 return result;
                             })(file.hash);
-
                     currDoc.fill({
                         'doctype':file_doctype,
                         'hash':file.hash,
@@ -131,7 +130,6 @@ router.post('/:id?', access.UserCanIn('documents','create'), function(req,res,ne
                     currDoc.alreadyExists(function(err, existing){
                         if(Array.isArray(existing) && existing.length > 0)
                             currDoc.set('id',existing[0].id);
-
                         currDoc.save(function(err,result){
                             if(err !== null) errorList.push(err);
 
@@ -142,16 +140,17 @@ router.post('/:id?', access.UserCanIn('documents','create'), function(req,res,ne
                                         if (err) return console.error(err);
 
                                         currDoc.erase();
-                                        currDoc.fill({'hash':existing[0].hash});
-                                        currDoc.inUse(function(err,result){
-                                           if(err.status === 404 || result.rowCount === 0)
-                                               fse.unlink('./uploads/'+currDoc.pathByHash(currDoc.hash),function(err){});
-                                        });
+                                        if(existing !== undefined){
+                                           currDoc.fill({'hash':existing[0].hash});
+                                            currDoc.inUse(function(err,result){
+                                            if(err.status === 404 || result.rowCount === 0)
+                                                fse.unlink('./uploads/'+currDoc.pathByHash(currDoc.hash),function(err){});
+                                            });
+                                        }
 
                                     });
                                 });
                             }
-
                             else{
                                 fse.unlink(tmp_path,function(err){});
                             }
